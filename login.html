@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Acceso al sistema</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-wrapper {
+            display: flex;
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255,255,255,0.98);
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+        }
+
+        .login-info {
+            background: #0f172a;
+            padding: 48px 36px;
+            width: 40%;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .logo-area i {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 20px;
+        }
+
+        .logo-area h2 {
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+        }
+
+        .logo-area p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .vars-preview {
+            margin: 32px 0;
+        }
+
+        .vars-preview h4 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            color: #60a5fa;
+        }
+
+        .var-list-small {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .var-list-small span {
+            background: rgba(59,130,246,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-family: monospace;
+        }
+
+        .badge-ml {
+            margin-top: 20px;
+            border-top: 1px solid #334155;
+            padding-top: 20px;
+            font-size: 0.7rem;
+        }
+
+        .login-form-area {
+            width: 60%;
+            padding: 48px 44px;
+            background: white;
+        }
+
+        .login-header {
+            margin-bottom: 32px;
+        }
+
+        .login-header h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .login-header p {
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-size: 0.85rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 60px;
+            border: 1.5px solid #e2e8f0;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px #bfdbfe;
+        }
+
+        .login-btn {
+            width: 100%;
+            background: #0f172a;
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover {
+            background: #1e293b;
+        }
+
+        .demo-creds {
+            background: #f1f5f9;
+            border-radius: 24px;
+            padding: 16px;
+            margin-top: 28px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .demo-creds strong {
+            color: #2563eb;
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 12px;
+            min-height: 40px;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .back-link a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .back-link a:hover {
+            color: #2563eb;
+        }
+
+        @media (max-width: 780px) {
+            .login-wrapper {
+                flex-direction: column;
+            }
+            .login-info, .login-form-area {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <div class="login-info">
+        <div class="logo-area">
+            <i class="fas fa-chart-line"></i>
+            <h2>PredictiveBES</h2>
+            <p>Plataforma de inteligencia predictiva para sistemas de Bombeo Electro Sumergible (BES)</p>
+        </div>
+        <div class="vars-preview">
+            <h4><i class="fas fa-database"></i> Variables críticas monitoreadas</h4>
+            <div class="var-list-small">
+                <span>Presión de entrada</span>
+                <span>Presión de descarga</span>
+                <span>Temperatura del devanado</span>
+                <span>Corriente del variador</span>
+                <span>Voltaje del variador</span>
+                <span>Vibración eje X</span>
+                <span>Temperatura BES</span>
+                <span>Potencia de la bomba</span>
+                <span>Saturación de gas</span>
+                <span>+32 más</span>
+            </div>
+        </div>
+        <div class="badge-ml">
+            <i class="fas fa-brain"></i> Modelos: LSTM · Random Forest · XGBoost<br>
+            <i class="fas fa-chart-line"></i> Precisión en pruebas: 96.4%
+        </div>
+    </div>
+
+    <div class="login-form-area">
+        <div class="login-header">
+            <h3>Acceso al dashboard</h3>
+            <p>Ingrese sus credenciales para visualizar telemetría y alertas predictivas</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label><i class="fas fa-envelope"></i> Correo electrónico</label>
+                <input type="email" id="email" placeholder="operador@predictivebes.com" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label><i class="fas fa-lock"></i> Contraseña</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <button type="submit" class="login-btn">
+                <i class="fas fa-sign-in-alt"></i> Ingresar al sistema
+            </button>
+            <div class="error-message" id="errorMsg"></div>
+        </form>
+
+        <div class="demo-creds">
+            <i class="fas fa-flask"></i> <strong>Credenciales de demostración</strong><br>
+            📧 <strong>demo@predictivebes.com</strong>   |   🔐 <strong>bes2025</strong>
+            <div style="font-size: 11px; margin-top: 8px;">Acceso completo al módulo de monitoreo predictivo de 41 variables</div>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html"><i class="fas fa-arrow-left"></i> Volver a la landing page</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passInput = document.getElementById('password');
+    const errorDiv = document.getElementById('errorMsg');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = emailInput.value.trim();
+        const password = passInput.value.trim();
+
+        errorDiv.innerHTML = '';
+
+        if (!email || !password) {
+            errorDiv.innerHTML = '⚠️ Complete ambos campos para acceder al sistema.';
+            return;
+        }
+
+        if (email === 'demo@predictivebes.com' && password === 'bes2025') {
+            errorDiv.style.color = '#16a34a';
+            errorDiv.innerHTML = '✅ Autenticación exitosa. Redirigiendo al dashboard...';
+            
+            const btn = form.querySelector('.login-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Validando credenciales...';
+            
+            setTimeout(() => {
+                alert('🎯 BIENVENIDO AL DASHBOARD PREDICTIVO\n\n' +
+                      'Variables disponibles: 41 en tiempo real\n' +
+                      'Modelo LSTM activo · Alertas tempranas habilitadas\n' +
+                      'Estado actual del pozo: OPERACIÓN NORMAL');
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar al sistema';
+                errorDiv.innerHTML = '';
+                emailInput.value = '';
+                passInput.value = '';
+                errorDiv.style.color = '#dc2626';
+            }, 1500);
+        } else {
+            errorDiv.style.color = '#dc2626';
+            errorDiv.innerHTML = '❌ Credenciales incorrectas. Use: demo@predictivebes.com / bes2025';
+            passInput.value = '';
+            passInput.focus();
+        }
+    });
+</script>
+</body>
+</html>
