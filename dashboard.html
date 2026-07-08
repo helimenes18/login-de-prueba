@@ -14,6 +14,8 @@
             display: flex;
             flex-direction: column;
         }
+        
+        /* ===== NAVBAR ===== */
         .navbar {
             background: #0f172a;
             padding: 20px 40px;
@@ -22,10 +24,55 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 16px;
+            border-bottom: 2px solid #1e293b;
         }
-        .navbar h1 { color: white; font-size: 1.4rem; }
-        .navbar h1 span { color: #3b82f6; }
-        .navbar .user-info { color: #94a3b8; display: flex; align-items: center; gap: 16px; }
+        .navbar .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .navbar .logo h1 {
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        .navbar .logo h1 span { color: #3b82f6; }
+        .navbar .logo .badge {
+            background: #1e293b;
+            color: #60a5fa;
+            font-size: 0.6rem;
+            padding: 3px 10px;
+            border-radius: 30px;
+            font-weight: 600;
+        }
+        .navbar .user-info {
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .navbar .user-info .email {
+            color: #e2e8f0;
+            font-size: 0.9rem;
+        }
+        .navbar .user-info .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #22c55e;
+        }
+        .navbar .user-info .status .dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
         .navbar .user-info button {
             background: #ef4444;
             border: none;
@@ -35,8 +82,14 @@
             cursor: pointer;
             font-weight: 600;
             font-size: 0.85rem;
+            transition: all 0.2s;
         }
-        .navbar .user-info button:hover { background: #dc2626; }
+        .navbar .user-info button:hover {
+            background: #dc2626;
+            transform: scale(1.02);
+        }
+
+        /* ===== CONTENIDO ===== */
         .dashboard-container {
             flex: 1;
             padding: 40px;
@@ -44,19 +97,28 @@
             margin: 0 auto;
             width: 100%;
         }
-        .dashboard-container h2 {
-            font-size: 2rem;
-            margin-bottom: 8px;
-            color: #0f172a;
-        }
-        .dashboard-container .subtitle {
-            color: #64748b;
+        .dashboard-container .header {
             margin-bottom: 32px;
         }
+        .dashboard-container .header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .dashboard-container .header .subtitle {
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .dashboard-container .header .subtitle i {
+            color: #3b82f6;
+        }
+
+        /* ===== CARDS ===== */
         .card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 24px;
+            margin-bottom: 32px;
         }
         .card {
             background: white;
@@ -65,119 +127,376 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
             text-align: center;
+            transition: all 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
         }
         .card .icon { font-size: 2.5rem; margin-bottom: 12px; }
         .card .value { font-size: 2rem; font-weight: 800; color: #0f172a; }
         .card .label { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+        .card .trend {
+            font-size: 0.7rem;
+            margin-top: 8px;
+            padding: 2px 10px;
+            border-radius: 30px;
+            display: inline-block;
+        }
+        .card .trend.up { background: #dcfce7; color: #16a34a; }
+        .card .trend.down { background: #fef2f2; color: #dc2626; }
         .card.blue { border-left: 4px solid #3b82f6; }
         .card.green { border-left: 4px solid #22c55e; }
         .card.orange { border-left: 4px solid #f59e0b; }
         .card.red { border-left: 4px solid #ef4444; }
-        .welcome-box {
+
+        /* ===== VARIABLES EN TIEMPO REAL ===== */
+        .variables-section {
             background: white;
             border-radius: 24px;
-            padding: 32px;
-            margin-top: 32px;
+            padding: 28px 32px;
             border: 1px solid #e2e8f0;
-            text-align: center;
+            margin-bottom: 32px;
         }
-        .welcome-box h3 { color: #0f172a; margin-bottom: 8px; }
-        .welcome-box p { color: #64748b; }
+        .variables-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .variables-section .section-header h3 {
+            font-size: 1.2rem;
+            color: #0f172a;
+        }
+        .variables-section .section-header .live-badge {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .variables-section .section-header .live-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: #dc2626;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        .vars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .var-item {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #f1f5f9;
+        }
+        .var-item .name {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .var-item .value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #0f172a;
+            font-family: monospace;
+        }
+        .var-item .value.normal { color: #22c55e; }
+        .var-item .value.warning { color: #f59e0b; }
+        .var-item .value.danger { color: #dc2626; }
+
+        /* ===== WELCOME BOX ===== */
+        .welcome-box {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: 24px;
+            padding: 32px 40px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .welcome-box h3 { font-size: 1.2rem; margin-bottom: 4px; }
+        .welcome-box p { color: #94a3b8; font-size: 0.9rem; }
+        .welcome-box .status-badge {
+            background: #1e293b;
+            padding: 8px 20px;
+            border-radius: 60px;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .welcome-box .status-badge .dot {
+            width: 10px;
+            height: 10px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .navbar { padding: 16px 20px; flex-direction: column; text-align: center; }
+            .navbar .user-info { flex-wrap: wrap; justify-content: center; }
             .dashboard-container { padding: 20px; }
+            .variables-section { padding: 20px; }
+            .vars-grid { grid-template-columns: 1fr; }
+            .welcome-box { flex-direction: column; text-align: center; }
         }
     </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-    <h1>🔬 Predictive<span>BES</span></h1>
-    <div class="user-info" id="userInfo">
-        <span id="userEmail">Cargando...</span>
-        <button onclick="cerrarSesion()">Cerrar sesión</button>
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <div class="logo">
+            <h1>🔬 Predictive<span>BES</span></h1>
+            <span class="badge">v1.0 · BES Analytics</span>
+        </div>
+        <div class="user-info">
+            <span class="status">
+                <span class="dot"></span>
+                <span>En línea</span>
+            </span>
+            <span class="email" id="userEmail">Cargando...</span>
+            <button id="btnCerrarSesion">
+                <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            </button>
+        </div>
+    </nav>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="dashboard-container">
+
+        <!-- Header -->
+        <div class="header">
+            <h2>📊 Panel de control</h2>
+            <p class="subtitle"><i class="fas fa-microchip"></i> Monitoreo predictivo en tiempo real · Bombas Electro Sumergibles (BES)</p>
+        </div>
+
+        <!-- Cards -->
+        <div class="card-grid">
+            <div class="card blue">
+                <div class="icon">⚡</div>
+                <div class="value">41</div>
+                <div class="label">Variables monitoreadas</div>
+                <span class="trend up">↑ 12 nuevas</span>
+            </div>
+            <div class="card green">
+                <div class="icon">✅</div>
+                <div class="value" id="equiposOperando">1</div>
+                <div class="label">Equipos operando</div>
+                <span class="trend up">↑ 100% disponibilidad</span>
+            </div>
+            <div class="card orange">
+                <div class="icon">⚠️</div>
+                <div class="value" id="alertasActivas">0</div>
+                <div class="label">Alertas activas</div>
+                <span class="trend down">↓ Sin alertas</span>
+            </div>
+            <div class="card red">
+                <div class="icon">🔴</div>
+                <div class="value" id="fallasDetectadas">0</div>
+                <div class="label">Fallas detectadas</div>
+                <span class="trend down">↓ 0 fallas</span>
+            </div>
+        </div>
+
+        <!-- Variables en tiempo real -->
+        <div class="variables-section">
+            <div class="section-header">
+                <h3>📡 Variables operativas en tiempo real</h3>
+                <div class="live-badge">
+                    <span class="dot"></span>
+                    <span>EN VIVO</span>
+                </div>
+            </div>
+            <div class="vars-grid" id="varsGrid">
+                <div class="var-item">
+                    <span class="name">⚡ Corriente</span>
+                    <span class="value normal" id="varCorriente">3.45 A</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">⚡ Voltaje</span>
+                    <span class="value normal" id="varVoltaje">118.2 V</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">📊 Presión entrada</span>
+                    <span class="value normal" id="varPresionEntrada">15.3 psi</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">📊 Presión salida</span>
+                    <span class="value normal" id="varPresionSalida">95.7 psi</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">🌡️ Temperatura motor</span>
+                    <span class="value normal" id="varTemperatura">32.1 °C</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">〰️ Vibración</span>
+                    <span class="value normal" id="varVibracion">0.82 G</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">🔄 Frecuencia</span>
+                    <span class="value normal" id="varFrecuencia">60.0 Hz</span>
+                </div>
+                <div class="var-item">
+                    <span class="name">📊 Saturación gas</span>
+                    <span class="value normal" id="varGas">23.4 %</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Welcome Box -->
+        <div class="welcome-box">
+            <div>
+                <h3>👋 Bienvenido al sistema predictivo</h3>
+                <p>Aquí se muestran los datos en tiempo real de tu bomba BES.<br>
+                <span style="font-size:0.8rem; color:#64748b;">Próximamente: gráficas avanzadas, alertas predictivas y análisis LSTM</span></p>
+            </div>
+            <div class="status-badge">
+                <span class="dot"></span>
+                <span>Sistema operativo</span>
+            </div>
+        </div>
     </div>
-</nav>
 
-<!-- DASHBOARD -->
-<div class="dashboard-container">
-    <h2>📊 Panel de control</h2>
-    <p class="subtitle">Monitoreo predictivo de Bombas Electro Sumergibles (BES)</p>
+    <script>
+        // ============================================================
+        // CONFIGURACIÓN SUPABASE
+        // ============================================================
+        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
-    <div class="card-grid">
-        <div class="card blue">
-            <div class="icon">⚡</div>
-            <div class="value">0</div>
-            <div class="label">Variables monitoreadas</div>
-        </div>
-        <div class="card green">
-            <div class="icon">✅</div>
-            <div class="value">0</div>
-            <div class="label">Equipos operando</div>
-        </div>
-        <div class="card orange">
-            <div class="icon">⚠️</div>
-            <div class="value">0</div>
-            <div class="label">Alertas activas</div>
-        </div>
-        <div class="card red">
-            <div class="icon">🔴</div>
-            <div class="value">0</div>
-            <div class="label">Fallas detectadas</div>
-        </div>
-    </div>
+        console.log('🔑 Inicializando Dashboard...');
+        console.log('📡 URL:', SUPABASE_URL);
 
-    <div class="welcome-box">
-        <h3>👋 Bienvenido al sistema predictivo</h3>
-        <p>Aquí se mostrarán los datos en tiempo real de tu bomba BES.<br>
-        <span style="font-size:0.85rem; color:#94a3b8;">Próximamente: gráficas, alertas y análisis predictivo</span></p>
-    </div>
-</div>
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-<script>
-    // ============================================================
-    // CONFIGURACIÓN SUPABASE
-    // ============================================================
-    const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co'; // ← REEMPLAZA
-    const SUPABASE_KEY = 'TU_CLAVE_ANON_PUBLIC'; // ← REEMPLAZA
+        // ============================================================
+        // VERIFICAR SESIÓN
+        // ============================================================
+        async function verificarSesion() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                if (!session) {
+                    console.log('🔒 No hay sesión activa, redirigiendo a login...');
+                    window.location.href = 'login.html';
+                    return;
+                }
 
-    // ============================================================
-    // VERIFICAR SESIÓN
-    // ============================================================
-    async function verificarSesion() {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-            // No hay sesión, redirigir al login
-            window.location.href = 'login.html';
-            return;
+                const userEmail = document.getElementById('userEmail');
+                userEmail.textContent = `👤 ${session.user.email}`;
+                console.log('✅ Usuario autenticado:', session.user.email);
+
+            } catch (error) {
+                console.error('❌ Error verificando sesión:', error);
+                window.location.href = 'login.html';
+            }
         }
 
-        // Mostrar email del usuario
-        const userEmail = document.getElementById('userEmail');
-        userEmail.textContent = `👤 ${session.user.email}`;
-    }
+        // ============================================================
+        // CERRAR SESIÓN
+        // ============================================================
+        async function cerrarSesion() {
+            console.log('🔓 Cerrando sesión...');
 
-    // ============================================================
-    // CERRAR SESIÓN
-    // ============================================================
-    async function cerrarSesion() {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            console.error('Error al cerrar sesión:', error);
-        } else {
-            localStorage.removeItem('bes_user');
-            window.location.href = 'login.html';
+            try {
+                const { error } = await supabase.auth.signOut();
+
+                if (error) {
+                    console.error('❌ Error al cerrar sesión:', error.message);
+                    alert('Error al cerrar sesión: ' + error.message);
+                    return;
+                }
+
+                localStorage.removeItem('bes_user');
+                console.log('✅ Sesión cerrada correctamente. Redirigiendo a login...');
+                window.location.href = 'login.html';
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error al cerrar sesión');
+            }
         }
-    }
 
-    // ============================================================
-    // INICIALIZAR
-    // ============================================================
-    verificarSesion();
-</script>
+        // ============================================================
+        // SIMULAR DATOS EN TIEMPO REAL
+        // ============================================================
+        function simularDatos() {
+            // Generar valores realistas
+            const corriente = (Math.random() * 2 + 2.5).toFixed(2);
+            const voltaje = (Math.random() * 10 + 115).toFixed(1);
+            const presionEntrada = (Math.random() * 15 + 10).toFixed(1);
+            const presionSalida = (Math.random() * 30 + 80).toFixed(1);
+            const temperatura = (Math.random() * 15 + 25).toFixed(1);
+            const vibracion = (Math.random() * 1.5 + 0.5).toFixed(2);
+            const frecuencia = (60 + Math.random() * 2 - 1).toFixed(1);
+            const gas = (Math.random() * 20 + 15).toFixed(1);
+
+            // Actualizar DOM
+            document.getElementById('varCorriente').textContent = corriente + ' A';
+            document.getElementById('varVoltaje').textContent = voltaje + ' V';
+            document.getElementById('varPresionEntrada').textContent = presionEntrada + ' psi';
+            document.getElementById('varPresionSalida').textContent = presionSalida + ' psi';
+            document.getElementById('varTemperatura').textContent = temperatura + ' °C';
+            document.getElementById('varVibracion').textContent = vibracion + ' G';
+            document.getElementById('varFrecuencia').textContent = frecuencia + ' Hz';
+            document.getElementById('varGas').textContent = gas + ' %';
+
+            // Simular alertas (5% de probabilidad)
+            const alerta = Math.random() < 0.05;
+            const alertasActivas = document.getElementById('alertasActivas');
+            const fallasDetectadas = document.getElementById('fallasDetectadas');
+            
+            if (alerta && parseFloat(temperatura) > 38) {
+                alertasActivas.textContent = '1';
+                alertasActivas.style.color = '#f59e0b';
+                document.getElementById('varTemperatura').className = 'value warning';
+            } else {
+                alertasActivas.textContent = '0';
+                alertasActivas.style.color = '#0f172a';
+                document.getElementById('varTemperatura').className = 'value normal';
+            }
+        }
+
+        // ============================================================
+        // ASIGNAR EVENTO AL BOTÓN
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar botón cerrar sesión
+            const btnCerrar = document.getElementById('btnCerrarSesion');
+            if (btnCerrar) {
+                btnCerrar.addEventListener('click', cerrarSesion);
+                console.log('✅ Botón de cerrar sesión configurado');
+            }
+
+            // Verificar sesión
+            verificarSesion();
+
+            // Iniciar simulación de datos (actualiza cada 3 segundos)
+            simularDatos();
+            setInterval(simularDatos, 3000);
+            console.log('🔄 Simulación de datos en tiempo real iniciada');
+        });
+
+        // Función global para cerrar sesión (por si se llama desde HTML)
+        window.cerrarSesion = cerrarSesion;
+    </script>
+
 </body>
-</html>dashboard.html
+</html>
