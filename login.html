@@ -167,6 +167,7 @@
             <button class="tab-btn" id="tabRegister">Registrarse</button>
         </div>
 
+        <!-- ===== LOGIN ===== -->
         <div class="form-container active" id="login-tab">
             <form id="loginForm">
                 <div class="input-group">
@@ -185,6 +186,7 @@
             </form>
         </div>
 
+        <!-- ===== REGISTRO ===== -->
         <div class="form-container" id="register-tab">
             <form id="registerForm">
                 <div class="input-group">
@@ -231,7 +233,7 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ============================================================
-    // ELEMENTOS DEL DOM
+    // ELEMENTOS DEL DOM - CON VERIFICACIÓN
     // ============================================================
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
@@ -253,10 +255,19 @@
     const registerSuccess = document.getElementById('registerSuccess');
     const registerBtn = document.getElementById('registerBtn');
 
+    // Verificar que todos los elementos existan
+    console.log('✅ Elementos del DOM cargados:');
+    console.log('  - tabLogin:', !!tabLogin);
+    console.log('  - tabRegister:', !!tabRegister);
+    console.log('  - registerBtn:', !!registerBtn);
+    console.log('  - registerForm:', !!registerForm);
+
     // ============================================================
     // FUNCIÓN PARA CAMBIAR TABS
     // ============================================================
     function cambiarTab(tab) {
+        console.log('📋 Cambiando a:', tab);
+        
         tabLogin.classList.remove('active');
         tabRegister.classList.remove('active');
         loginTab.classList.remove('active');
@@ -276,170 +287,183 @@
         registerSuccess.textContent = '';
     }
 
-    tabLogin.addEventListener('click', function() {
-        cambiarTab('login');
-    });
+    // ============================================================
+    // EVENTOS DE TABS - CON VERIFICACIÓN
+    // ============================================================
+    if (tabLogin) {
+        tabLogin.addEventListener('click', function() {
+            console.log('🔄 Click en tab Login');
+            cambiarTab('login');
+        });
+    } else {
+        console.error('❌ tabLogin no encontrado');
+    }
 
-    tabRegister.addEventListener('click', function() {
-        cambiarTab('register');
-    });
+    if (tabRegister) {
+        tabRegister.addEventListener('click', function() {
+            console.log('🔄 Click en tab Register');
+            cambiarTab('register');
+        });
+    } else {
+        console.error('❌ tabRegister no encontrado');
+    }
 
     // ============================================================
-    // REGISTRO - CON MANEJO DE ERRORES 429
+    // REGISTRO - CON VERIFICACIÓN
     // ============================================================
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const email = registerEmail.value.trim();
-        const password = registerPassword.value;
-        const passwordConfirm = registerPasswordConfirm.value;
+    if (registerForm) {
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('📝 Formulario de registro enviado');
+            
+            const email = registerEmail.value.trim();
+            const password = registerPassword.value;
+            const passwordConfirm = registerPasswordConfirm.value;
 
-        registerError.textContent = '';
-        registerSuccess.textContent = '';
+            registerError.textContent = '';
+            registerSuccess.textContent = '';
 
-        if (!email || !password || !passwordConfirm) {
-            registerError.textContent = '⚠️ Complete todos los campos.';
-            return;
-        }
-        if (!email.includes('@')) {
-            registerError.textContent = '⚠️ Ingrese un correo válido.';
-            return;
-        }
-        if (password.length < 6) {
-            registerError.textContent = '⚠️ La contraseña debe tener al menos 6 caracteres.';
-            return;
-        }
-        if (password !== passwordConfirm) {
-            registerError.textContent = '⚠️ Las contraseñas no coinciden.';
-            return;
-        }
+            // Validaciones
+            if (!email || !password || !passwordConfirm) {
+                registerError.textContent = '⚠️ Complete todos los campos.';
+                return;
+            }
+            if (!email.includes('@')) {
+                registerError.textContent = '⚠️ Ingrese un correo válido.';
+                return;
+            }
+            if (password.length < 6) {
+                registerError.textContent = '⚠️ La contraseña debe tener al menos 6 caracteres.';
+                return;
+            }
+            if (password !== passwordConfirm) {
+                registerError.textContent = '⚠️ Las contraseñas no coinciden.';
+                return;
+            }
 
-        registerBtn.disabled = true;
-        registerBtn.innerHTML = '⏳ Registrando...';
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '⏳ Registrando...';
 
-        try {
-            console.log('📝 Intentando registrar:', email);
+            try {
+                console.log('📝 Intentando registrar:', email);
 
-            const { data, error } = await supabaseClient.auth.signUp({
-                email: email,
-                password: password,
-                options: { 
-                    data: { role: 'operador' }
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: { 
+                        data: { role: 'operador' }
+                    }
+                });
+
+                if (error) {
+                    console.error('❌ Error de registro:', error);
+                    
+                    if (error.message.includes('User already registered')) {
+                        registerError.textContent = '❌ Este correo ya está registrado. Usa otro o inicia sesión.';
+                    } else if (error.message.includes('Password should be at least')) {
+                        registerError.textContent = '❌ La contraseña debe tener al menos 6 caracteres.';
+                    } else {
+                        registerError.textContent = '❌ ' + error.message;
+                    }
+                    
+                    registerBtn.disabled = false;
+                    registerBtn.innerHTML = 'Crear cuenta';
+                    return;
                 }
-            });
 
-            if (error) {
-                console.error('❌ Error de registro:', error);
-                
-                if (error.status === 429) {
-                    registerError.textContent = '⏳ Demasiados intentos. Espera 1 minuto y vuelve a intentar.';
-                } else if (error.message.includes('User already registered')) {
-                    registerError.textContent = '❌ Este correo ya está registrado. Usa otro o inicia sesión.';
-                } else if (error.message.includes('Password should be at least')) {
-                    registerError.textContent = '❌ La contraseña debe tener al menos 6 caracteres.';
-                } else {
-                    registerError.textContent = '❌ ' + error.message;
+                if (data.user) {
+                    console.log('✅ Usuario registrado:', data.user.email);
+                    registerSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión.';
+                    registerEmail.value = '';
+                    registerPassword.value = '';
+                    registerPasswordConfirm.value = '';
+                    
+                    setTimeout(() => {
+                        cambiarTab('login');
+                        loginEmail.value = email;
+                        loginPassword.value = '';
+                    }, 1500);
                 }
-                
+
+            } catch (err) {
+                console.error('❌ Error:', err);
+                registerError.textContent = '❌ Error: ' + err.message;
+            } finally {
                 registerBtn.disabled = false;
                 registerBtn.innerHTML = 'Crear cuenta';
+            }
+        });
+    } else {
+        console.error('❌ registerForm no encontrado');
+    }
+
+    // ============================================================
+    // LOGIN - CON VERIFICACIÓN
+    // ============================================================
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('🔑 Formulario de login enviado');
+            
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+
+            loginError.textContent = '';
+            loginSuccess.textContent = '';
+
+            if (!email || !password) {
+                loginError.textContent = '⚠️ Complete ambos campos.';
                 return;
             }
 
-            if (data.user) {
-                console.log('✅ Usuario registrado:', data.user.email);
-                registerSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión.';
-                registerEmail.value = '';
-                registerPassword.value = '';
-                registerPasswordConfirm.value = '';
-                
-                setTimeout(() => {
-                    cambiarTab('login');
-                    loginEmail.value = email;
-                    loginPassword.value = '';
-                }, 1500);
-            }
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '⏳ Validando...';
 
-        } catch (err) {
-            console.error('❌ Error:', err);
-            registerError.textContent = '❌ Error: ' + err.message;
-        } finally {
-            registerBtn.disabled = false;
-            registerBtn.innerHTML = 'Crear cuenta';
-        }
-    });
+            try {
+                console.log('🔑 Intentando login:', email);
 
-    // ============================================================
-    // LOGIN
-    // ============================================================
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const email = loginEmail.value.trim();
-        const password = loginPassword.value;
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
 
-        loginError.textContent = '';
-        loginSuccess.textContent = '';
-
-        if (!email || !password) {
-            loginError.textContent = '⚠️ Complete ambos campos.';
-            return;
-        }
-
-        loginBtn.disabled = true;
-        loginBtn.innerHTML = '⏳ Validando...';
-
-        try {
-            console.log('🔑 Intentando login:', email);
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-
-            if (error) {
-                console.error('❌ Error de login:', error);
-                
-                if (error.status === 400) {
+                if (error) {
+                    console.error('❌ Error de login:', error);
                     loginError.textContent = '❌ Correo o contraseña incorrectos. Usa: demo@predictivebes.com / bes2025';
-                } else if (error.message.includes('Invalid login credentials')) {
-                    loginError.textContent = '❌ Correo o contraseña incorrectos. Verifica tus credenciales.';
-                } else if (error.message.includes('Email not confirmed')) {
-                    loginError.textContent = '❌ El correo no ha sido confirmado. Revisa tu bandeja de entrada.';
-                } else {
-                    loginError.textContent = '❌ ' + error.message;
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = 'Ingresar al sistema';
+                    return;
                 }
-                
+
+                if (data.user) {
+                    console.log('✅ Usuario autenticado:', data.user.email);
+                    loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
+                    
+                    localStorage.setItem('bes_user', JSON.stringify({
+                        id: data.user.id,
+                        email: data.user.email
+                    }));
+
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                }
+
+            } catch (err) {
+                console.error('❌ Error:', err);
+                loginError.textContent = '❌ Error: ' + err.message;
+            } finally {
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = 'Ingresar al sistema';
-                return;
             }
-
-            if (data.user) {
-                console.log('✅ Usuario autenticado:', data.user.email);
-                loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
-                
-                localStorage.setItem('bes_user', JSON.stringify({
-                    id: data.user.id,
-                    email: data.user.email
-                }));
-
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 1000);
-            }
-
-        } catch (err) {
-            console.error('❌ Error:', err);
-            loginError.textContent = '❌ Error: ' + err.message;
-        } finally {
-            loginBtn.disabled = false;
-            loginBtn.innerHTML = 'Ingresar al sistema';
-        }
-    });
+        });
+    } else {
+        console.error('❌ loginForm no encontrado');
+    }
 
     console.log('🔐 Sistema de autenticación listo.');
     console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
+    console.log('📋 O regístrate con un correo nuevo');
 </script>
 </body>
 </html>
