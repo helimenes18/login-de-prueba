@@ -55,7 +55,6 @@
         .login-form-area h3 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
         .login-form-area .subtitle { color: #64748b; margin-bottom: 28px; }
         
-        /* ===== TABS ===== */
         .tabs {
             display: flex;
             gap: 8px;
@@ -86,7 +85,6 @@
             background: rgba(255,255,255,0.5);
         }
         
-        /* ===== FORMULARIOS ===== */
         .form-container { 
             display: none; 
         }
@@ -164,13 +162,11 @@
         <h3>🔐 Acceso al sistema</h3>
         <p class="subtitle">Ingresa o regístrate para comenzar</p>
 
-        <!-- ===== BOTONES ===== -->
         <div class="tabs">
             <button class="tab-btn active" id="tabLogin">Iniciar sesión</button>
             <button class="tab-btn" id="tabRegister">Registrarse</button>
         </div>
 
-        <!-- ===== LOGIN ===== -->
         <div class="form-container active" id="login-tab">
             <form id="loginForm">
                 <div class="input-group">
@@ -189,7 +185,6 @@
             </form>
         </div>
 
-        <!-- ===== REGISTRO ===== -->
         <div class="form-container" id="register-tab">
             <form id="registerForm">
                 <div class="input-group">
@@ -225,18 +220,18 @@
 
 <script>
     // ============================================================
-    // CONFIGURACIÓN SUPABASE
+    // CONFIGURACIÓN SUPABASE - SOLO CAMBIÉ LA URL
     // ============================================================
-    const SUPABASE_URL = 'https://wtdnshiswweyyeqezybz.supabase.co';
+    const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
     console.log('🔑 Inicializando Supabase...');
+    console.log('📡 URL:', SUPABASE_URL);
     
-    // ✅ TU CÓDIGO - Usando supabaseClient (bien hecho)
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ============================================================
-    // ELEMENTOS DEL DOM
+    // ELEMENTOS DEL DOM - EXACTAMENTE COMO LOS TENÍAS
     // ============================================================
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
@@ -259,16 +254,14 @@
     const registerBtn = document.getElementById('registerBtn');
 
     // ============================================================
-    // ✅ FUNCIÓN PARA CAMBIAR TABS (LA ÚNICA MODIFICACIÓN)
+    // FUNCIÓN PARA CAMBIAR TABS
     // ============================================================
     function cambiarTab(tab) {
-        // Quitar active de todo
         tabLogin.classList.remove('active');
         tabRegister.classList.remove('active');
         loginTab.classList.remove('active');
         registerTab.classList.remove('active');
         
-        // Activar el seleccionado
         if (tab === 'login') {
             tabLogin.classList.add('active');
             loginTab.classList.add('active');
@@ -277,16 +270,12 @@
             registerTab.classList.add('active');
         }
         
-        // Limpiar mensajes
         loginError.textContent = '';
         loginSuccess.textContent = '';
         registerError.textContent = '';
         registerSuccess.textContent = '';
     }
 
-    // ============================================================
-    // ✅ EVENTOS DE LOS BOTONES (AHORA FUNCIONAN)
-    // ============================================================
     tabLogin.addEventListener('click', function() {
         cambiarTab('login');
     });
