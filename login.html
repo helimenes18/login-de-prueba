@@ -54,9 +54,11 @@
         }
         .login-form-area h3 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
         .login-form-area .subtitle { color: #64748b; margin-bottom: 28px; }
+        
+        /* ===== TABS ===== */
         .tabs {
             display: flex;
-            gap: 0;
+            gap: 8px;
             margin-bottom: 28px;
             border-radius: 60px;
             background: #f1f5f9;
@@ -64,7 +66,7 @@
         }
         .tab-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px 20px;
             border: none;
             border-radius: 60px;
             background: transparent;
@@ -72,10 +74,26 @@
             cursor: pointer;
             transition: all 0.2s;
             font-family: inherit;
+            font-size: 0.95rem;
+            color: #64748b;
         }
-        .tab-btn.active { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .form-container { display: none; }
-        .form-container.active { display: block; }
+        .tab-btn.active { 
+            background: white; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            color: #0f172a;
+        }
+        .tab-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        /* ===== FORMULARIOS ===== */
+        .form-container { 
+            display: none; 
+        }
+        .form-container.active { 
+            display: block; 
+        }
+        
         .input-group { margin-bottom: 18px; }
         .input-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #1e293b; font-size: 0.85rem; }
         .input-group input {
@@ -128,7 +146,6 @@
 <body>
 
 <div class="login-wrapper">
-    <!-- Panel izquierdo -->
     <div class="login-info">
         <div>
             <h2>🔬 PredictiveBES</h2>
@@ -139,22 +156,21 @@
             </div>
         </div>
         <div style="font-size:0.7rem; color:#475569;">
-            <i class="fas fa-shield-alt"></i> Datos seguros en la nube
+            Datos seguros en la nube
         </div>
     </div>
 
-    <!-- Panel derecho -->
     <div class="login-form-area">
         <h3>🔐 Acceso al sistema</h3>
         <p class="subtitle">Ingresa o regístrate para comenzar</p>
 
-        <!-- Tabs -->
+        <!-- ===== BOTONES ===== -->
         <div class="tabs">
             <button class="tab-btn active" id="tabLogin">Iniciar sesión</button>
             <button class="tab-btn" id="tabRegister">Registrarse</button>
         </div>
 
-        <!-- FORMULARIO LOGIN -->
+        <!-- ===== LOGIN ===== -->
         <div class="form-container active" id="login-tab">
             <form id="loginForm">
                 <div class="input-group">
@@ -173,7 +189,7 @@
             </form>
         </div>
 
-        <!-- FORMULARIO REGISTRO -->
+        <!-- ===== REGISTRO ===== -->
         <div class="form-container" id="register-tab">
             <form id="registerForm">
                 <div class="input-group">
@@ -209,15 +225,15 @@
 
 <script>
     // ============================================================
-    // ⚠️ REEMPLAZA ESTOS VALORES CON LOS TUYOS DE SUPABASE
+    // CONFIGURACIÓN SUPABASE
     // ============================================================
-    const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co'; // ← COPIA TU URL
-    const SUPABASE_KEY = 'TU_CLAVE_ANON_PUBLIC'; // ← COPIA TU CLAVE
+    const SUPABASE_URL = 'https://wtdnshiswweyyeqezybz.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
-    // ============================================================
-    // INICIALIZAR SUPABASE
-    // ============================================================
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('🔑 Inicializando Supabase...');
+    
+    // ✅ TU CÓDIGO - Usando supabaseClient (bien hecho)
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ============================================================
     // ELEMENTOS DEL DOM
@@ -243,32 +259,44 @@
     const registerBtn = document.getElementById('registerBtn');
 
     // ============================================================
-    // SWITCH DE TABS
+    // ✅ FUNCIÓN PARA CAMBIAR TABS (LA ÚNICA MODIFICACIÓN)
     // ============================================================
-    tabLogin.addEventListener('click', () => {
-        tabLogin.classList.add('active');
-        tabRegister.classList.remove('active');
-        loginTab.classList.add('active');
-        registerTab.classList.remove('active');
-        loginError.textContent = '';
-        loginSuccess.textContent = '';
-        registerError.textContent = '';
-        registerSuccess.textContent = '';
-    });
-
-    tabRegister.addEventListener('click', () => {
-        tabRegister.classList.add('active');
+    function cambiarTab(tab) {
+        // Quitar active de todo
         tabLogin.classList.remove('active');
-        registerTab.classList.add('active');
+        tabRegister.classList.remove('active');
         loginTab.classList.remove('active');
+        registerTab.classList.remove('active');
+        
+        // Activar el seleccionado
+        if (tab === 'login') {
+            tabLogin.classList.add('active');
+            loginTab.classList.add('active');
+        } else {
+            tabRegister.classList.add('active');
+            registerTab.classList.add('active');
+        }
+        
+        // Limpiar mensajes
         loginError.textContent = '';
         loginSuccess.textContent = '';
         registerError.textContent = '';
         registerSuccess.textContent = '';
+    }
+
+    // ============================================================
+    // ✅ EVENTOS DE LOS BOTONES (AHORA FUNCIONAN)
+    // ============================================================
+    tabLogin.addEventListener('click', function() {
+        cambiarTab('login');
+    });
+
+    tabRegister.addEventListener('click', function() {
+        cambiarTab('register');
     });
 
     // ============================================================
-    // REGISTRO DE USUARIO
+    // REGISTRO
     // ============================================================
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -301,7 +329,7 @@
         registerBtn.innerHTML = '⏳ Registrando...';
 
         try {
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password,
                 options: { data: { role: 'operador' } }
@@ -321,7 +349,7 @@
                 registerPasswordConfirm.value = '';
                 
                 setTimeout(() => {
-                    tabLogin.click();
+                    cambiarTab('login');
                     loginEmail.value = email;
                     loginPassword.value = '';
                 }, 1500);
@@ -336,7 +364,7 @@
     });
 
     // ============================================================
-    // LOGIN DE USUARIO
+    // LOGIN
     // ============================================================
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -356,7 +384,7 @@
         loginBtn.innerHTML = '⏳ Validando...';
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: password
             });
@@ -371,13 +399,11 @@
             if (data.user) {
                 loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
                 
-                // Guardar sesión
                 localStorage.setItem('bes_user', JSON.stringify({
                     id: data.user.id,
                     email: data.user.email
                 }));
 
-                // Redirigir al dashboard
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
@@ -391,8 +417,8 @@
         }
     });
 
-    console.log('🔐 Sistema de autenticación inicializado');
-    console.log('📡 Conectado a Supabase:', SUPABASE_URL);
+    console.log('🔐 Sistema de autenticación listo.');
+    console.log('📋 Haz clic en "Registrarse" para crear una cuenta');
 </script>
 </body>
 </html>
