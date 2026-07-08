@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f0f4fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            background: #0f172a;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .navbar h1 { color: white; font-size: 1.4rem; }
+        .navbar h1 span { color: #3b82f6; }
+        .navbar .user-info { color: #94a3b8; display: flex; align-items: center; gap: 16px; }
+        .navbar .user-info button {
+            background: #ef4444;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .navbar .user-info button:hover { background: #dc2626; }
+        .dashboard-container {
+            flex: 1;
+            padding: 40px;
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .dashboard-container h2 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+        .dashboard-container .subtitle {
+            color: #64748b;
+            margin-bottom: 32px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .card .icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .card .value { font-size: 2rem; font-weight: 800; color: #0f172a; }
+        .card .label { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+        .card.blue { border-left: 4px solid #3b82f6; }
+        .card.green { border-left: 4px solid #22c55e; }
+        .card.orange { border-left: 4px solid #f59e0b; }
+        .card.red { border-left: 4px solid #ef4444; }
+        .welcome-box {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            margin-top: 32px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .welcome-box h3 { color: #0f172a; margin-bottom: 8px; }
+        .welcome-box p { color: #64748b; }
+        @media (max-width: 768px) {
+            .navbar { padding: 16px 20px; flex-direction: column; text-align: center; }
+            .dashboard-container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <h1>🔬 Predictive<span>BES</span></h1>
+    <div class="user-info" id="userInfo">
+        <span id="userEmail">Cargando...</span>
+        <button onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="dashboard-container">
+    <h2>📊 Panel de control</h2>
+    <p class="subtitle">Monitoreo predictivo de Bombas Electro Sumergibles (BES)</p>
+
+    <div class="card-grid">
+        <div class="card blue">
+            <div class="icon">⚡</div>
+            <div class="value">0</div>
+            <div class="label">Variables monitoreadas</div>
+        </div>
+        <div class="card green">
+            <div class="icon">✅</div>
+            <div class="value">0</div>
+            <div class="label">Equipos operando</div>
+        </div>
+        <div class="card orange">
+            <div class="icon">⚠️</div>
+            <div class="value">0</div>
+            <div class="label">Alertas activas</div>
+        </div>
+        <div class="card red">
+            <div class="icon">🔴</div>
+            <div class="value">0</div>
+            <div class="label">Fallas detectadas</div>
+        </div>
+    </div>
+
+    <div class="welcome-box">
+        <h3>👋 Bienvenido al sistema predictivo</h3>
+        <p>Aquí se mostrarán los datos en tiempo real de tu bomba BES.<br>
+        <span style="font-size:0.85rem; color:#94a3b8;">Próximamente: gráficas, alertas y análisis predictivo</span></p>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // CONFIGURACIÓN SUPABASE
+    // ============================================================
+    const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co'; // ← REEMPLAZA
+    const SUPABASE_KEY = 'TU_CLAVE_ANON_PUBLIC'; // ← REEMPLAZA
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ============================================================
+    // VERIFICAR SESIÓN
+    // ============================================================
+    async function verificarSesion() {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+            // No hay sesión, redirigir al login
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Mostrar email del usuario
+        const userEmail = document.getElementById('userEmail');
+        userEmail.textContent = `👤 ${session.user.email}`;
+    }
+
+    // ============================================================
+    // CERRAR SESIÓN
+    // ============================================================
+    async function cerrarSesion() {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error al cerrar sesión:', error);
+        } else {
+            localStorage.removeItem('bes_user');
+            window.location.href = 'login.html';
+        }
+    }
+
+    // ============================================================
+    // INICIALIZAR
+    // ============================================================
+    verificarSesion();
+</script>
+</body>
+</html>dashboard.html
