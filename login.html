@@ -171,7 +171,7 @@
             <form id="loginForm">
                 <div class="input-group">
                     <label>📧 Correo electrónico</label>
-                    <input type="email" id="loginEmail" placeholder="operador@predictivebes.com" required>
+                    <input type="email" id="loginEmail" placeholder="demo@predictivebes.com" required>
                 </div>
                 <div class="input-group">
                     <label>🔒 Contraseña</label>
@@ -220,18 +220,18 @@
 
 <script>
     // ============================================================
-    // CONFIGURACIÓN SUPABASE - SOLO CAMBIÉ LA URL
+    // CONFIGURACIÓN SUPABASE
     // ============================================================
     const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
     console.log('🔑 Inicializando Supabase...');
     console.log('📡 URL:', SUPABASE_URL);
-    
+
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // ============================================================
-    // ELEMENTOS DEL DOM - EXACTAMENTE COMO LOS TENÍAS
+    // ELEMENTOS DEL DOM
     // ============================================================
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
@@ -285,7 +285,7 @@
     });
 
     // ============================================================
-    // REGISTRO
+    // REGISTRO - CON MANEJO DE ERRORES 429
     // ============================================================
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -318,20 +318,36 @@
         registerBtn.innerHTML = '⏳ Registrando...';
 
         try {
+            console.log('📝 Intentando registrar:', email);
+
             const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password,
-                options: { data: { role: 'operador' } }
+                options: { 
+                    data: { role: 'operador' }
+                }
             });
 
             if (error) {
-                registerError.textContent = '❌ ' + error.message;
+                console.error('❌ Error de registro:', error);
+                
+                if (error.status === 429) {
+                    registerError.textContent = '⏳ Demasiados intentos. Espera 1 minuto y vuelve a intentar.';
+                } else if (error.message.includes('User already registered')) {
+                    registerError.textContent = '❌ Este correo ya está registrado. Usa otro o inicia sesión.';
+                } else if (error.message.includes('Password should be at least')) {
+                    registerError.textContent = '❌ La contraseña debe tener al menos 6 caracteres.';
+                } else {
+                    registerError.textContent = '❌ ' + error.message;
+                }
+                
                 registerBtn.disabled = false;
                 registerBtn.innerHTML = 'Crear cuenta';
                 return;
             }
 
             if (data.user) {
+                console.log('✅ Usuario registrado:', data.user.email);
                 registerSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión.';
                 registerEmail.value = '';
                 registerPassword.value = '';
@@ -345,6 +361,7 @@
             }
 
         } catch (err) {
+            console.error('❌ Error:', err);
             registerError.textContent = '❌ Error: ' + err.message;
         } finally {
             registerBtn.disabled = false;
@@ -373,19 +390,33 @@
         loginBtn.innerHTML = '⏳ Validando...';
 
         try {
+            console.log('🔑 Intentando login:', email);
+
             const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: password
             });
 
             if (error) {
-                loginError.textContent = '❌ ' + error.message;
+                console.error('❌ Error de login:', error);
+                
+                if (error.status === 400) {
+                    loginError.textContent = '❌ Correo o contraseña incorrectos. Usa: demo@predictivebes.com / bes2025';
+                } else if (error.message.includes('Invalid login credentials')) {
+                    loginError.textContent = '❌ Correo o contraseña incorrectos. Verifica tus credenciales.';
+                } else if (error.message.includes('Email not confirmed')) {
+                    loginError.textContent = '❌ El correo no ha sido confirmado. Revisa tu bandeja de entrada.';
+                } else {
+                    loginError.textContent = '❌ ' + error.message;
+                }
+                
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = 'Ingresar al sistema';
                 return;
             }
 
             if (data.user) {
+                console.log('✅ Usuario autenticado:', data.user.email);
                 loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
                 
                 localStorage.setItem('bes_user', JSON.stringify({
@@ -399,6 +430,7 @@
             }
 
         } catch (err) {
+            console.error('❌ Error:', err);
             loginError.textContent = '❌ Error: ' + err.message;
         } finally {
             loginBtn.disabled = false;
@@ -407,7 +439,7 @@
     });
 
     console.log('🔐 Sistema de autenticación listo.');
-    console.log('📋 Haz clic en "Registrarse" para crear una cuenta');
+    console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
 </script>
 </body>
 </html>
