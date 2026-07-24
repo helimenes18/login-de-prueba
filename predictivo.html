@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Predictivo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f4fa; min-height: 100vh; display: flex; flex-direction: column; }
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #0f172a; padding: 24px 16px;
+            display: flex; flex-direction: column; transition: all 0.3s; z-index: 100;
+        }
+        .sidebar .logo { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 32px; }
+        .sidebar .logo h2 { color: white; font-size: 1.2rem; font-weight: 700; }
+        .sidebar .logo h2 span { color: #3b82f6; }
+        .sidebar .logo .badge { background: #1e293b; color: #60a5fa; font-size: 0.5rem; padding: 2px 8px; border-radius: 30px; }
+        .sidebar .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
+            color: #94a3b8; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; font-weight: 500; font-size: 0.9rem;
+        }
+        .sidebar .nav-item:hover { background: #1e293b; color: white; }
+        .sidebar .nav-item.active { background: #1e293b; color: white; }
+        .sidebar .nav-item i { width: 20px; font-size: 1.1rem; }
+        .sidebar .nav-divider { border: none; border-top: 1px solid #1e293b; margin: 12px 0; }
+        .sidebar .nav-footer { margin-top: auto; padding: 12px 16px; color: #475569; font-size: 0.7rem; }
+        .main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar {
+            background: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;
+        }
+        .navbar .left { display: flex; align-items: center; gap: 16px; }
+        .navbar .left h1 { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
+        .navbar .left .breadcrumb { color: #64748b; font-size: 0.85rem; }
+        .navbar .right { display: flex; align-items: center; gap: 16px; }
+        .navbar .right .user { display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 500; font-size: 0.9rem; }
+        .navbar .right .user .avatar { width: 36px; height: 36px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; }
+        .navbar .right .btn-logout { background: #ef4444; border: none; color: white; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
+        .navbar .right .btn-logout:hover { background: #dc2626; }
+        .content { padding: 32px; flex: 1; }
+        .page-title { margin-bottom: 24px; }
+        .page-title h2 { font-size: 1.6rem; color: #0f172a; }
+        .page-title p { color: #64748b; }
+
+        .predict-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .card { background: white; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; }
+        .card h3 { font-size: 1rem; color: #0f172a; margin-bottom: 16px; }
+
+        .alert-card {
+            background: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 20px;
+            display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+        }
+        .alert-card .icon { font-size: 2rem; }
+        .alert-card .info h4 { color: #dc2626; font-size: 1rem; }
+        .alert-card .info p { color: #64748b; font-size: 0.85rem; }
+
+        .predict-card { background: #f0fdf4; border: 1px solid #86efac; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+        .predict-card .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #dcfce7; }
+        .predict-card .row:last-child { border: none; }
+        .predict-card .label { color: #64748b; font-size: 0.85rem; }
+        .predict-card .value { font-weight: 600; }
+
+        .confidence-bar { height: 8px; background: #e2e8f0; border-radius: 30px; overflow: hidden; margin-top: 8px; }
+        .confidence-bar .fill { height: 100%; background: #22c55e; border-radius: 30px; }
+
+        .sidebar-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #0f172a; }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 200px; padding: 16px 12px; }
+            .sidebar .nav-item { font-size: 0.8rem; padding: 10px 12px; }
+            .main-content { margin-left: 200px; }
+            .predict-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 260px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: block; }
+            .navbar { padding: 12px 16px; flex-wrap: wrap; }
+            .content { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo"><h2>🔬 <span>Predictive</span>BES</h2><span class="badge">v1.0</span></div>
+        <a href="dashboard.html" class="nav-item"><i>📊</i> Dashboard</a>
+        <a href="monitoreo.html" class="nav-item"><i>📡</i> Monitoreo</a>
+        <a href="predictivo.html" class="nav-item active"><i>🧠</i> Predictivo</a>
+        <a href="historial.html" class="nav-item"><i>📋</i> Historial</a>
+        <a href="reportes.html" class="nav-item"><i>📄</i> Reportes</a>
+        <hr class="nav-divider">
+        <a href="configuracion.html" class="nav-item"><i>⚙️</i> Configuración</a>
+        <a href="perfil.html" class="nav-item"><i>👤</i> Perfil</a>
+        <hr class="nav-divider">
+        <div class="nav-footer"><p>© 2025 PredictiveBES</p><p style="font-size:0.6rem; color:#334155;">BES Analytics · IA</p></div>
+    </nav>
+
+    <div class="main-content">
+        <header class="navbar">
+            <div class="left">
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <h1>Predictivo</h1>
+                <span class="breadcrumb">/ Análisis con IA</span>
+            </div>
+            <div class="right">
+                <div class="user"><div class="avatar" id="userAvatar">D</div><span id="userEmail">Cargando...</span></div>
+                <button class="btn-logout" id="btnLogout">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-title">
+                <h2>🧠 Análisis predictivo con IA</h2>
+                <p>Detección temprana de fallas · LSTM + Random Forest</p>
+            </div>
+
+            <div class="predict-grid">
+                <!-- Alertas -->
+                <div>
+                    <div class="card">
+                        <h3>🔴 Alertas predictivas</h3>
+                        <div class="alert-card">
+                            <div class="icon">⚠️</div>
+                            <div class="info">
+                                <h4>Posible sobrecalentamiento</h4>
+                                <p>PDT en aumento · 187°F → 192°F en 2h</p>
+                            </div>
+                        </div>
+                        <div class="alert-card" style="background:#fef3c7; border-color:#fcd34d;">
+                            <div class="icon">📊</div>
+                            <div class="info">
+                                <h4>Presión de entrada baja</h4>
+                                <p>PIP: 124 psi · Umbral mínimo: 100 psi</p>
+                            </div>
+                        </div>
+                        <div style="padding:12px; background:#f8fafc; border-radius:12px; text-align:center; color:#64748b; font-size:0.85rem;">
+                            <span class="status-badge" style="background:#dcfce7; color:#16a34a; padding:4px 12px; border-radius:30px;">🧠 IA activa</span>
+                            <span style="margin-left:12px;">Última predicción: hace 2min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Predicciones -->
+                <div>
+                    <div class="card">
+                        <h3>📈 Pronóstico de fallas</h3>
+                        <div class="predict-card">
+                            <div class="row"><span class="label">Falla estimada</span><span class="value">Desgaste de rodamientos</span></div>
+                            <div class="row"><span class="label">Tiempo estimado</span><span class="value" style="color:#dc2626;">12-18 horas</span></div>
+                            <div class="row"><span class="label">Confianza del modelo</span><span class="value">92%</span></div>
+                            <div class="confidence-bar"><div class="fill" style="width:92%;"></div></div>
+                            <div style="margin-top:12px; font-size:0.8rem; color:#64748b;">Variables críticas: PDT, PDP, Vibración</div>
+                        </div>
+                        <div style="padding:12px; background:#f0fdf4; border-radius:12px; border:1px solid #86efac; text-align:center;">
+                            <span style="color:#16a34a; font-weight:600;">✅ Acción recomendada: Mantenimiento preventivo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        async function verificarSesion() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) { window.location.href = 'login.html'; return; }
+                document.getElementById('userEmail').textContent = session.user.email;
+                document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
+            } catch { window.location.href = 'login.html'; }
+        }
+
+        document.getElementById('btnLogout').addEventListener('click', async function() {
+            await supabase.auth.signOut();
+            localStorage.removeItem('bes_user');
+            window.location.href = 'login.html';
+        });
+
+        document.addEventListener('DOMContentLoaded', verificarSesion);
+    </script>
+</body>
+</html>

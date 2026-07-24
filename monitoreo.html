@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Monitoreo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f4fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== SIDEBAR (igual que dashboard) ===== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 240px;
+            background: #0f172a;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        .sidebar .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+        }
+        .sidebar .logo h2 { color: white; font-size: 1.2rem; font-weight: 700; }
+        .sidebar .logo h2 span { color: #3b82f6; }
+        .sidebar .logo .badge { background: #1e293b; color: #60a5fa; font-size: 0.5rem; padding: 2px 8px; border-radius: 30px; }
+        .sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .sidebar .nav-item:hover { background: #1e293b; color: white; }
+        .sidebar .nav-item.active { background: #1e293b; color: white; }
+        .sidebar .nav-item i { width: 20px; font-size: 1.1rem; }
+        .sidebar .nav-divider { border: none; border-top: 1px solid #1e293b; margin: 12px 0; }
+        .sidebar .nav-footer { margin-top: auto; padding: 12px 16px; color: #475569; font-size: 0.7rem; }
+
+        .main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+        .navbar {
+            background: white;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .navbar .left { display: flex; align-items: center; gap: 16px; }
+        .navbar .left h1 { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
+        .navbar .left .breadcrumb { color: #64748b; font-size: 0.85rem; }
+        .navbar .right { display: flex; align-items: center; gap: 16px; }
+        .navbar .right .user { display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 500; font-size: 0.9rem; }
+        .navbar .right .user .avatar { width: 36px; height: 36px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; }
+        .navbar .right .btn-logout { background: #ef4444; border: none; color: white; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
+        .navbar .right .btn-logout:hover { background: #dc2626; }
+
+        .content { padding: 32px; flex: 1; }
+
+        .page-title { margin-bottom: 24px; }
+        .page-title h2 { font-size: 1.6rem; color: #0f172a; }
+        .page-title p { color: #64748b; }
+
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+        .monitor-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+        }
+        .monitor-card h3 {
+            font-size: 1rem;
+            color: #0f172a;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .monitor-card h3 .status {
+            font-size: 0.75rem;
+            color: #22c55e;
+            font-weight: 400;
+        }
+        .monitor-card h3 .status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+        .chart-placeholder {
+            background: #f8fafc;
+            border-radius: 12px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            border: 1px dashed #e2e8f0;
+        }
+
+        .vars-list { display: flex; flex-direction: column; gap: 8px; }
+        .var-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .var-row .name { color: #64748b; }
+        .var-row .value { font-weight: 600; font-family: monospace; }
+        .var-row .value.normal { color: #22c55e; }
+        .var-row .value.warning { color: #f59e0b; }
+        .var-row .value.danger { color: #dc2626; }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .status-badge.ok { background: #dcfce7; color: #16a34a; }
+        .status-badge.warning { background: #fef3c7; color: #d97706; }
+        .status-badge.danger { background: #fef2f2; color: #dc2626; }
+
+        .sidebar-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #0f172a; }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 200px; padding: 16px 12px; }
+            .sidebar .nav-item { font-size: 0.8rem; padding: 10px 12px; }
+            .main-content { margin-left: 200px; }
+            .monitor-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 260px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: block; }
+            .navbar { padding: 12px 16px; flex-wrap: wrap; }
+            .content { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo"><h2>🔬 <span>Predictive</span>BES</h2><span class="badge">v1.0</span></div>
+        <a href="dashboard.html" class="nav-item"><i>📊</i> Dashboard</a>
+        <a href="monitoreo.html" class="nav-item active"><i>📡</i> Monitoreo</a>
+        <a href="predictivo.html" class="nav-item"><i>🧠</i> Predictivo</a>
+        <a href="historial.html" class="nav-item"><i>📋</i> Historial</a>
+        <a href="reportes.html" class="nav-item"><i>📄</i> Reportes</a>
+        <hr class="nav-divider">
+        <a href="configuracion.html" class="nav-item"><i>⚙️</i> Configuración</a>
+        <a href="perfil.html" class="nav-item"><i>👤</i> Perfil</a>
+        <hr class="nav-divider">
+        <div class="nav-footer"><p>© 2025 PredictiveBES</p><p style="font-size:0.6rem; color:#334155;">BES Analytics · IA</p></div>
+    </nav>
+
+    <div class="main-content">
+        <header class="navbar">
+            <div class="left">
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <h1>Monitoreo</h1>
+                <span class="breadcrumb">/ Datos en tiempo real</span>
+            </div>
+            <div class="right">
+                <div class="user"><div class="avatar" id="userAvatar">D</div><span id="userEmail">Cargando...</span></div>
+                <button class="btn-logout" id="btnLogout">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-title">
+                <h2>📡 Monitoreo en tiempo real</h2>
+                <p>Variables operativas de pozos BES · Actualización cada 3 segundos</p>
+            </div>
+
+            <div class="monitor-grid">
+                <!-- Graficas -->
+                <div>
+                    <div class="monitor-card" style="margin-bottom:24px;">
+                        <h3>📊 Presiones <span class="status"><span class="dot"></span> Actualizando</span></h3>
+                        <div class="chart-placeholder">
+                            <div style="text-align:center;">
+                                <div style="font-size:2rem; margin-bottom:8px;">📈</div>
+                                <p>Gráfica de presiones</p>
+                                <p style="font-size:0.7rem;">CHP · THP · PLP · PIP · PDP</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="monitor-card">
+                        <h3>🌡️ Temperaturas <span class="status"><span class="dot"></span> Actualizando</span></h3>
+                        <div class="chart-placeholder">
+                            <div style="text-align:center;">
+                                <div style="font-size:2rem; margin-bottom:8px;">🌡️</div>
+                                <p>Gráfica de temperaturas</p>
+                                <p style="font-size:0.7rem;">PDT · TLP</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Variables en vivo -->
+                <div>
+                    <div class="monitor-card">
+                        <h3>⚡ Variables críticas</h3>
+                        <div class="vars-list" id="varsList">
+                            <div class="var-row"><span class="name">⚡ Corriente</span><span class="value normal" id="mCorriente">3.45 A</span></div>
+                            <div class="var-row"><span class="name">⚡ Voltaje</span><span class="value normal" id="mVoltaje">118.2 V</span></div>
+                            <div class="var-row"><span class="name">📊 CHP</span><span class="value normal" id="mCHP">386 psi</span></div>
+                            <div class="var-row"><span class="name">📊 THP</span><span class="value normal" id="mTHP">215 psi</span></div>
+                            <div class="var-row"><span class="name">📊 PLP</span><span class="value normal" id="mPLP">198 psi</span></div>
+                            <div class="var-row"><span class="name">📊 PIP</span><span class="value normal" id="mPIP">124 psi</span></div>
+                            <div class="var-row"><span class="name">📊 PDP</span><span class="value normal" id="mPDP">1420 psi</span></div>
+                            <div class="var-row"><span class="name">🌡️ PDT</span><span class="value normal" id="mPDT">187 °F</span></div>
+                            <div class="var-row"><span class="name">🌡️ TLP</span><span class="value normal" id="mTLP">112 °F</span></div>
+                            <div class="var-row"><span class="name">〰️ Vibración</span><span class="value normal" id="mVibracion">0.82 G</span></div>
+                        </div>
+                    </div>
+                    <div class="monitor-card" style="margin-top:16px;">
+                        <h3>📌 Estado del pozo</h3>
+                        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px;">
+                            <div><span class="status-badge ok">✅ Operando normal</span></div>
+                            <div><span>Última lectura: <span id="ultimaLectura">hace 3s</span></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        async function verificarSesion() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) { window.location.href = 'login.html'; return; }
+                document.getElementById('userEmail').textContent = session.user.email;
+                document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
+            } catch { window.location.href = 'login.html'; }
+        }
+
+        document.getElementById('btnLogout').addEventListener('click', async function() {
+            await supabase.auth.signOut();
+            localStorage.removeItem('bes_user');
+            window.location.href = 'login.html';
+        });
+
+        function actualizarMonitoreo() {
+            const c = (Math.random() * 2 + 2.5).toFixed(2);
+            const v = (Math.random() * 10 + 115).toFixed(1);
+            const chp = (Math.random() * 100 + 350).toFixed(0);
+            const thp = (Math.random() * 50 + 190).toFixed(0);
+            const plp = (Math.random() * 50 + 170).toFixed(0);
+            const pip = (Math.random() * 40 + 100).toFixed(0);
+            const pdp = (Math.random() * 200 + 1300).toFixed(0);
+            const pdt = (Math.random() * 20 + 170).toFixed(0);
+            const tlp = (Math.random() * 30 + 95).toFixed(0);
+            const vib = (Math.random() * 1.5 + 0.5).toFixed(2);
+
+            document.getElementById('mCorriente').textContent = c + ' A';
+            document.getElementById('mVoltaje').textContent = v + ' V';
+            document.getElementById('mCHP').textContent = chp + ' psi';
+            document.getElementById('mTHP').textContent = thp + ' psi';
+            document.getElementById('mPLP').textContent = plp + ' psi';
+            document.getElementById('mPIP').textContent = pip + ' psi';
+            document.getElementById('mPDP').textContent = pdp + ' psi';
+            document.getElementById('mPDT').textContent = pdt + ' °F';
+            document.getElementById('mTLP').textContent = tlp + ' °F';
+            document.getElementById('mVibracion').textContent = vib + ' G';
+            document.getElementById('ultimaLectura').textContent = 'hace 3s';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarSesion();
+            actualizarMonitoreo();
+            setInterval(actualizarMonitoreo, 3000);
+        });
+    </script>
+</body>
+</html>

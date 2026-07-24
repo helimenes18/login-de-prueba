@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Historial</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f4fa; min-height: 100vh; display: flex; flex-direction: column; }
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #0f172a; padding: 24px 16px;
+            display: flex; flex-direction: column; transition: all 0.3s; z-index: 100;
+        }
+        .sidebar .logo { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 32px; }
+        .sidebar .logo h2 { color: white; font-size: 1.2rem; font-weight: 700; }
+        .sidebar .logo h2 span { color: #3b82f6; }
+        .sidebar .logo .badge { background: #1e293b; color: #60a5fa; font-size: 0.5rem; padding: 2px 8px; border-radius: 30px; }
+        .sidebar .nav-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
+            color: #94a3b8; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; font-weight: 500; font-size: 0.9rem;
+        }
+        .sidebar .nav-item:hover { background: #1e293b; color: white; }
+        .sidebar .nav-item.active { background: #1e293b; color: white; }
+        .sidebar .nav-item i { width: 20px; font-size: 1.1rem; }
+        .sidebar .nav-divider { border: none; border-top: 1px solid #1e293b; margin: 12px 0; }
+        .sidebar .nav-footer { margin-top: auto; padding: 12px 16px; color: #475569; font-size: 0.7rem; }
+        .main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar {
+            background: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;
+        }
+        .navbar .left { display: flex; align-items: center; gap: 16px; }
+        .navbar .left h1 { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
+        .navbar .left .breadcrumb { color: #64748b; font-size: 0.85rem; }
+        .navbar .right { display: flex; align-items: center; gap: 16px; }
+        .navbar .right .user { display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 500; font-size: 0.9rem; }
+        .navbar .right .user .avatar { width: 36px; height: 36px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; }
+        .navbar .right .btn-logout { background: #ef4444; border: none; color: white; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
+        .navbar .right .btn-logout:hover { background: #dc2626; }
+        .content { padding: 32px; flex: 1; }
+        .page-title { margin-bottom: 24px; }
+        .page-title h2 { font-size: 1.6rem; color: #0f172a; }
+        .page-title p { color: #64748b; }
+
+        .filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filters input, .filters select {
+            padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 30px; font-family: inherit; font-size: 0.85rem;
+            background: white; min-width: 150px;
+        }
+        .filters input:focus, .filters select:focus { outline: none; border-color: #3b82f6; }
+
+        .table-container { background: white; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead { border-bottom: 2px solid #e2e8f0; }
+        th { text-align: left; padding: 12px 16px; color: #64748b; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+        tr:hover td { background: #f8fafc; }
+
+        .status-badge {
+            padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; font-weight: 600; display: inline-block;
+        }
+        .status-badge.resuelto { background: #dcfce7; color: #16a34a; }
+        .status-badge.en-proceso { background: #fef3c7; color: #d97706; }
+        .status-badge.pendiente { background: #fef2f2; color: #dc2626; }
+        .status-badge.critico { background: #fef2f2; color: #dc2626; }
+
+        .sidebar-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #0f172a; }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 200px; padding: 16px 12px; }
+            .sidebar .nav-item { font-size: 0.8rem; padding: 10px 12px; }
+            .main-content { margin-left: 200px; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 260px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: block; }
+            .navbar { padding: 12px 16px; flex-wrap: wrap; }
+            .content { padding: 16px; }
+            .filters { flex-direction: column; }
+            .filters input, .filters select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo"><h2>🔬 <span>Predictive</span>BES</h2><span class="badge">v1.0</span></div>
+        <a href="dashboard.html" class="nav-item"><i>📊</i> Dashboard</a>
+        <a href="monitoreo.html" class="nav-item"><i>📡</i> Monitoreo</a>
+        <a href="predictivo.html" class="nav-item"><i>🧠</i> Predictivo</a>
+        <a href="historial.html" class="nav-item active"><i>📋</i> Historial</a>
+        <a href="reportes.html" class="nav-item"><i>📄</i> Reportes</a>
+        <hr class="nav-divider">
+        <a href="configuracion.html" class="nav-item"><i>⚙️</i> Configuración</a>
+        <a href="perfil.html" class="nav-item"><i>👤</i> Perfil</a>
+        <hr class="nav-divider">
+        <div class="nav-footer"><p>© 2025 PredictiveBES</p><p style="font-size:0.6rem; color:#334155;">BES Analytics · IA</p></div>
+    </nav>
+
+    <div class="main-content">
+        <header class="navbar">
+            <div class="left">
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <h1>Historial</h1>
+                <span class="breadcrumb">/ Registro de fallas</span>
+            </div>
+            <div class="right">
+                <div class="user"><div class="avatar" id="userAvatar">D</div><span id="userEmail">Cargando...</span></div>
+                <button class="btn-logout" id="btnLogout">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-title">
+                <h2>📋 Historial de fallas</h2>
+                <p>Registro histórico de eventos y anomalías detectadas</p>
+            </div>
+
+            <div class="filters">
+                <input type="text" placeholder="🔍 Buscar por pozo..." id="searchInput">
+                <select id="filterStatus">
+                    <option value="">Todos los estados</option>
+                    <option value="resuelto">Resuelto</option>
+                    <option value="en-proceso">En proceso</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="critico">Crítico</option>
+                </select>
+                <select id="filterType">
+                    <option value="">Todos los tipos</option>
+                    <option value="mecanica">Mecánica</option>
+                    <option value="electrica">Eléctrica</option>
+                    <option value="termica">Térmica</option>
+                    <option value="hidraulica">Hidráulica</option>
+                </select>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Pozo</th>
+                            <th>Tipo</th>
+                            <th>Variable afectada</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialBody">
+                        <tr>
+                            <td>2025-06-20 14:30</td>
+                            <td>Pozo BES-01</td>
+                            <td>Térmica</td>
+                            <td>PDT · 187°F → 192°F</td>
+                            <td><span class="status-badge resuelto">✅ Resuelto</span></td>
+                            <td>Mantenimiento preventivo</td>
+                        </tr>
+                        <tr>
+                            <td>2025-06-18 09:15</td>
+                            <td>Pozo BES-03</td>
+                            <td>Eléctrica</td>
+                            <td>Voltaje · 118V → 98V</td>
+                            <td><span class="status-badge en-proceso">⏳ En proceso</span></td>
+                            <td>Revisión eléctrica</td>
+                        </tr>
+                        <tr>
+                            <td>2025-06-15 22:45</td>
+                            <td>Pozo BES-02</td>
+                            <td>Mecánica</td>
+                            <td>Vibración · 0.82G → 2.1G</td>
+                            <td><span class="status-badge pendiente">⏰ Pendiente</span></td>
+                            <td>Inspección de rodamientos</td>
+                        </tr>
+                        <tr>
+                            <td>2025-06-12 11:00</td>
+                            <td>Pozo BES-04</td>
+                            <td>Hidráulica</td>
+                            <td>PIP · 124psi → 85psi</td>
+                            <td><span class="status-badge critico">🔴 Crítico</span></td>
+                            <td>Revisión urgente</td>
+                        </tr>
+                        <tr>
+                            <td>2025-06-10 16:20</td>
+                            <td>Pozo BES-01</td>
+                            <td>Térmica</td>
+                            <td>TLP · 112°F → 125°F</td>
+                            <td><span class="status-badge resuelto">✅ Resuelto</span></td>
+                            <td>Limpieza de intercambiador</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:16px; text-align:center; color:#64748b; font-size:0.85rem;">
+                Mostrando 5 de 24 registros · Última actualización: hace 3min
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        async function verificarSesion() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) { window.location.href = 'login.html'; return; }
+                document.getElementById('userEmail').textContent = session.user.email;
+                document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
+            } catch { window.location.href = 'login.html'; }
+        }
+
+        document.getElementById('btnLogout').addEventListener('click', async function() {
+            await supabase.auth.signOut();
+            localStorage.removeItem('bes_user');
+            window.location.href = 'login.html';
+        });
+
+        // Filtros
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const search = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#historialBody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('filterStatus').addEventListener('change', function() {
+            const status = this.value;
+            const rows = document.querySelectorAll('#historialBody tr');
+            rows.forEach(row => {
+                const badge = row.querySelector('.status-badge');
+                if (!badge) return;
+                const text = badge.textContent.trim().toLowerCase();
+                if (!status) { row.style.display = ''; return; }
+                const statusMap = {
+                    'resuelto': 'resuelto',
+                    'en-proceso': 'en proceso',
+                    'pendiente': 'pendiente',
+                    'critico': 'crítico'
+                };
+                row.style.display = text.includes(statusMap[status] || status) ? '' : 'none';
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', verificarSesion);
+    </script>
+</body>
+</html>
