@@ -422,7 +422,7 @@
         <hr class="nav-divider">
 
         <div class="nav-footer">
-            <p>© 2025 PredictiveBES</p>
+            <p>© 2026 PredictiveBES</p>
             <p style="font-size:0.55rem; opacity:0.6;">BES Analytics · IA</p>
         </div>
     </nav>
@@ -435,16 +435,16 @@
         <!-- ===== NAVBAR ===== -->
         <header class="navbar-top">
             <div class="left">
-                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <button type="button" class="sidebar-toggle" id="sidebarToggle">☰</button>
                 <h1>Dashboard</h1>
                 <span class="breadcrumb">/ Resumen del sistema</span>
             </div>
             <div class="right">
                 <div class="user">
-                    <div class="avatar" id="userAvatar">D</div>
+                    <div class="avatar" id="userAvatar">U</div>
                     <span id="userEmail">Cargando...</span>
                 </div>
-                <button class="btn-logout" id="btnLogout">Cerrar sesión</button>
+                <button type="button" class="btn-logout" id="btnLogout">Cerrar sesión</button>
             </div>
         </header>
 
@@ -456,8 +456,8 @@
                 <div class="stat-card">
                     <span class="icon"><i class="fas fa-database"></i></span>
                     <div class="label">Variables monitoreadas</div>
-                    <div class="value">41</div>
-                    <span class="change up">↑ 12 nuevas</span>
+                    <div class="value">2</div>
+                    <span class="change up">↑ Activas</span>
                 </div>
                 <div class="stat-card">
                     <span class="icon"><i class="fas fa-check-circle"></i></span>
@@ -488,19 +488,17 @@
                         <span>EN VIVO</span>
                     </div>
                 </div>
+                
+                <!-- ESTRICTAMENTE LAS VARIABLES 1 Y 2 -->
                 <div class="vars-grid" id="varsGrid">
-                    <div class="var-item"><span class="name">⚡ Corriente</span><span class="value normal" id="v1">3.45 A</span></div>
-                    <div class="var-item"><span class="name">⚡ Voltaje</span><span class="value normal" id="v2">118.2 V</span></div>
-                    <div class="var-item"><span class="name">📊 CHP</span><span class="value normal" id="v3">386 psi</span></div>
-                    <div class="var-item"><span class="name">📊 THP</span><span class="value normal" id="v4">215 psi</span></div>
-                    <div class="var-item"><span class="name">📊 PLP</span><span class="value normal" id="v5">198 psi</span></div>
-                    <div class="var-item"><span class="name">📊 PIP</span><span class="value normal" id="v6">124 psi</span></div>
-                    <div class="var-item"><span class="name">📊 PDP</span><span class="value normal" id="v7">1420 psi</span></div>
-                    <div class="var-item"><span class="name">🌡️ PDT</span><span class="value normal" id="v8">187 °F</span></div>
-                    <div class="var-item"><span class="name">🌡️ TLP</span><span class="value normal" id="v9">112 °F</span></div>
-                    <div class="var-item"><span class="name">〰️ Vibración</span><span class="value normal" id="v10">0.82 G</span></div>
-                    <div class="var-item"><span class="name">🔄 Frecuencia</span><span class="value normal" id="v11">60.0 Hz</span></div>
-                    <div class="var-item"><span class="name">📊 Gas sat.</span><span class="value normal" id="v12">23.4 %</span></div>
+                    <div class="var-item">
+                        <span class="name">Variable 1</span>
+                        <span class="value normal" id="v1">--</span>
+                    </div>
+                    <div class="var-item">
+                        <span class="name">Variable 2</span>
+                        <span class="value normal" id="v2">--</span>
+                    </div>
                 </div>
             </div>
 
@@ -525,7 +523,9 @@
         // ============================================================
         const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Unificado el nombre a supabaseClient igual que en login.html
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ============================================================
         // SIDEBAR TOGGLE
@@ -539,41 +539,62 @@
         // ============================================================
         async function verificarSesion() {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) { window.location.href = 'login.html'; return; }
-                document.getElementById('userEmail').textContent = session.user.email;
-                document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
-            } catch { window.location.href = 'login.html'; }
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                
+                if (error || !session) { 
+                    window.location.replace('login.html'); 
+                    return; 
+                }
+                
+                // Validación de seguridad por si el correo viene nulo o no se ha cargado
+                if (session.user && session.user.email) {
+                    document.getElementById('userEmail').textContent = session.user.email;
+                    document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
+                } else {
+                    document.getElementById('userEmail').textContent = "Operador";
+                    document.getElementById('userAvatar').textContent = "O";
+                }
+
+            } catch (err) { 
+                console.error("Error validando sesión:", err);
+                window.location.replace('login.html'); 
+            }
         }
 
         // ============================================================
-        // CERRAR SESIÓN
+        // CERRAR SESIÓN (CORREGIDO)
         // ============================================================
-        document.getElementById('btnLogout').addEventListener('click', async function() {
-            await supabase.auth.signOut();
-            localStorage.removeItem('bes_user');
-            window.location.href = 'login.html';
+        document.getElementById('btnLogout').addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Cambiamos el texto para indicar al usuario que está procesando
+            this.textContent = "Saliendo...";
+            this.style.opacity = "0.7";
+
+            try {
+                // Intentamos cerrar la sesión en el servidor de Supabase
+                await supabaseClient.auth.signOut();
+            } catch (error) {
+                // Si el servidor falla, lo registramos pero continuamos cerrando localmente
+                console.error("Error durante el cierre en Supabase:", error);
+            } finally {
+                // El bloque finally asegura que esto se ejecute SÍ o SÍ
+                localStorage.removeItem('bes_user');
+                // replace() destruye el historial para que no puedan dar "Atrás" en el navegador
+                window.location.replace('login.html'); 
+            }
         });
 
         // ============================================================
-        // SIMULAR DATOS
+        // SIMULAR DATOS - AJUSTADO SÓLO PARA VARIABLE 1 Y 2
         // ============================================================
         function actualizarVariables() {
-            const ids = ['v1','v2','v3','v4','v5','v6','v7','v8','v9','v10','v11','v12'];
+            const ids = ['v1', 'v2'];
             const valores = [
-                (Math.random()*2+2.5).toFixed(2)+' A',
-                (Math.random()*10+115).toFixed(1)+' V',
-                (Math.random()*100+350).toFixed(0)+' psi',
-                (Math.random()*50+190).toFixed(0)+' psi',
-                (Math.random()*50+170).toFixed(0)+' psi',
-                (Math.random()*40+100).toFixed(0)+' psi',
-                (Math.random()*200+1300).toFixed(0)+' psi',
-                (Math.random()*20+170).toFixed(0)+' °F',
-                (Math.random()*30+95).toFixed(0)+' °F',
-                (Math.random()*1.5+0.5).toFixed(2)+' G',
-                (Math.random()*2+59).toFixed(1)+' Hz',
-                (Math.random()*20+15).toFixed(1)+' %'
+                (Math.random() * 2 + 2.5).toFixed(2) + ' A',   // Simulación para Var 1
+                (Math.random() * 10 + 115).toFixed(1) + ' V'   // Simulación para Var 2
             ];
+            
             ids.forEach((id, i) => {
                 const el = document.getElementById(id);
                 if (el) el.textContent = valores[i];

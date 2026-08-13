@@ -427,18 +427,18 @@
     const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
-    // ✅ Renombrado a 'supabaseClient' para evitar colisión con el objeto global de la librería CDN
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     console.log('🔐 Sistema de autenticación inicializado');
     console.log('📡 Conectado a Supabase:', SUPABASE_URL);
 
-    // Redirigir automáticamente si ya existe una sesión activa
+    // ============================================================
+    // CERRAR SESIÓN FORZADO AL CARGAR LA PÁGINA
+    // ============================================================
+    // Esto asegura que SIEMPRE pida correo y clave, eliminando cualquier sesión activa
     window.addEventListener('DOMContentLoaded', async () => {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session) {
-            window.location.href = 'dashboard.html';
-        }
+        await supabaseClient.auth.signOut();
+        localStorage.removeItem('bes_user');
     });
 
     // ============================================================
