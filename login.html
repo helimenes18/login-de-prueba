@@ -417,15 +417,19 @@
 
 <script>
     // ============================================================
-    // CONFIGURACIÓN SUPABASE
+    // CONFIGURACIÓN SUPABASE - SOLO UNA DECLARACIÓN
     // ============================================================
     const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
+    // ✅ SOLO UNA VEZ - Inicializar Supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    console.log('🔐 Sistema de autenticación inicializado');
+    console.log('📡 Conectado a Supabase:', SUPABASE_URL);
+
     // ============================================================
-    // ELEMENTOS
+    // ELEMENTOS DEL DOM
     // ============================================================
     const tabLogin = document.getElementById('tabLogin');
     const tabRegister = document.getElementById('tabRegister');
@@ -594,7 +598,8 @@
         }
     });
 
-    console.log('🔐 Sistema de autenticación inicializado');
+    console.log('🔐 Sistema de autenticación listo.');
+    console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
 </script>
 
 </body>
