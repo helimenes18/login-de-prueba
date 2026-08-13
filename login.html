@@ -274,6 +274,11 @@
             border: 1px solid var(--border-color);
             font-size: 0.8rem;
             color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .demo-creds:hover {
+            background: rgba(139, 92, 246, 0.1);
         }
         .demo-creds strong {
             color: var(--accent);
@@ -401,8 +406,8 @@
         </div>
 
         <!-- ===== DEMO ===== -->
-        <div class="demo-creds">
-            🧪 <strong>Cuenta de demostración</strong>
+        <div class="demo-creds" id="demoBox" title="Haz clic para autocompletar credenciales">
+            🧪 <strong>Cuenta de demostración (clic para usar)</strong>
             <div class="creds">
                 <span>📧 demo@predictivebes.com</span>
                 <span>🔐 bes2025</span>
@@ -417,16 +422,24 @@
 
 <script>
     // ============================================================
-    // CONFIGURACIÓN SUPABASE - SOLO UNA DECLARACIÓN
+    // CONFIGURACIÓN SUPABASE
     // ============================================================
     const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
 
-    // ✅ SOLO UNA VEZ - Inicializar Supabase
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // ✅ Renombrado a 'supabaseClient' para evitar colisión con el objeto global de la librería CDN
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     console.log('🔐 Sistema de autenticación inicializado');
     console.log('📡 Conectado a Supabase:', SUPABASE_URL);
+
+    // Redirigir automáticamente si ya existe una sesión activa
+    window.addEventListener('DOMContentLoaded', async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            window.location.href = 'dashboard.html';
+        }
+    });
 
     // ============================================================
     // ELEMENTOS DEL DOM
@@ -450,6 +463,8 @@
     const registerError = document.getElementById('registerError');
     const registerSuccess = document.getElementById('registerSuccess');
     const registerBtn = document.getElementById('registerBtn');
+
+    const demoBox = document.getElementById('demoBox');
 
     // ============================================================
     // TABS
@@ -476,6 +491,17 @@
 
     tabLogin.addEventListener('click', () => cambiarTab('login'));
     tabRegister.addEventListener('click', () => cambiarTab('register'));
+
+    // ============================================================
+    // AUTOCOMPLETAR DEMO
+    // ============================================================
+    if (demoBox) {
+        demoBox.addEventListener('click', () => {
+            cambiarTab('login');
+            loginEmail.value = 'demo@predictivebes.com';
+            loginPassword.value = 'bes2025';
+        });
+    }
 
     // ============================================================
     // REGISTRO
@@ -511,7 +537,7 @@
         registerBtn.innerHTML = '⏳ Registrando...';
 
         try {
-            const { data, error } = await supabase.auth.signUp({
+            const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password,
                 options: { data: { role: 'operador' } }
@@ -519,8 +545,6 @@
 
             if (error) {
                 registerError.textContent = '❌ ' + error.message;
-                registerBtn.disabled = false;
-                registerBtn.innerHTML = 'Crear cuenta';
                 return;
             }
 
@@ -541,7 +565,7 @@
             registerError.textContent = '❌ Error: ' + err.message;
         } finally {
             registerBtn.disabled = false;
-            registerBtn.innerHTML = 'Crear cuenta';
+            registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear cuenta';
         }
     });
 
@@ -566,15 +590,13 @@
         loginBtn.innerHTML = '⏳ Validando...';
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
                 email: email,
                 password: password
             });
 
             if (error) {
                 loginError.textContent = '❌ ' + error.message;
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = 'Ingresar al sistema';
                 return;
             }
 
@@ -594,12 +616,11 @@
             loginError.textContent = '❌ Error: ' + err.message;
         } finally {
             loginBtn.disabled = false;
-            loginBtn.innerHTML = 'Ingresar al sistema';
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar al sistema';
         }
     });
 
     console.log('🔐 Sistema de autenticación listo.');
-    console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
 </script>
 
 </body>
