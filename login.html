@@ -3,467 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictiveBES · Acceso al sistema</title>
+    <title>PredictiveBES · Iniciar Sesión</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-        }
-        .login-wrapper {
-            display: flex;
-            max-width: 1000px;
-            width: 100%;
-            background: white;
-            border-radius: 48px;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            min-height: 550px;
-        }
-        .login-info {
-            background: #0f172a;
-            padding: 48px 36px;
-            width: 40%;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .login-info h2 { font-size: 1.8rem; margin-bottom: 8px; color: #3b82f6; }
-        .login-info p { color: #94a3b8; font-size: 0.9rem; line-height: 1.6; }
-        .login-info .badge {
-            background: rgba(59,130,246,0.2);
-            padding: 12px 16px;
-            border-radius: 16px;
-            border-left: 4px solid #3b82f6;
-            margin-top: 20px;
-        }
-        .login-form-area {
-            width: 60%;
-            padding: 48px 44px;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .login-form-area h3 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
-        .login-form-area .subtitle { color: #64748b; margin-bottom: 28px; }
-        
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 28px;
-            border-radius: 60px;
-            background: #f1f5f9;
-            padding: 4px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 60px;
-            background: transparent;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: inherit;
-            font-size: 0.95rem;
-            color: #64748b;
-        }
-        .tab-btn.active { 
-            background: white; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            color: #0f172a;
-        }
-        .tab-btn:hover:not(.active) {
-            background: rgba(255,255,255,0.5);
-        }
-        
-        .form-container { 
-            display: none; 
-        }
-        .form-container.active { 
-            display: block; 
-        }
-        
-        .input-group { margin-bottom: 18px; }
-        .input-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #1e293b; font-size: 0.85rem; }
-        .input-group input {
-            width: 100%;
-            padding: 14px 18px;
-            border-radius: 60px;
-            border: 1.5px solid #e2e8f0;
-            font-family: inherit;
-            font-size: 1rem;
-            transition: all 0.2s;
-        }
-        .input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px #bfdbfe; }
-        .login-btn {
-            width: 100%;
-            background: #0f172a;
-            border: none;
-            padding: 14px;
-            border-radius: 60px;
-            font-weight: 700;
-            font-size: 1rem;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
-        }
-        .login-btn:hover { background: #1e293b; }
-        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-        .error-message { color: #dc2626; font-size: 0.8rem; text-align: center; margin-top: 12px; min-height: 30px; }
-        .success-message { color: #16a34a; font-size: 0.8rem; text-align: center; margin-top: 12px; }
-        .demo-creds {
-            background: #f1f5f9;
-            border-radius: 20px;
-            padding: 14px;
-            margin-top: 20px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            font-size: 0.85rem;
-        }
-        .demo-creds strong { color: #2563eb; }
-        .back-link { text-align: center; margin-top: 16px; }
-        .back-link a { color: #64748b; text-decoration: none; font-size: 0.85rem; }
-        .back-link a:hover { color: #2563eb; }
-        @media (max-width: 780px) {
-            .login-wrapper { flex-direction: column; }
-            .login-info, .login-form-area { width: 100%; }
-            .login-info { padding: 32px 24px; }
-        }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 40px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .logo-container { text-align: center; margin-bottom: 32px; }
+        .logo-container h2 { color: #0f172a; font-size: 1.5rem; font-weight: 800; }
+        .logo-container h2 span { color: #3b82f6; }
+        .logo-container p { color: #64748b; font-size: 0.85rem; margin-top: 8px; font-weight: 500; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.85rem; color: #475569; font-weight: 600; margin-bottom: 8px; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+        .form-group input:focus { border-color: #3b82f6; }
+        .btn-login { background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; width: 100%; transition: background 0.2s; margin-top: 10px; }
+        .btn-login:hover { background: #2563eb; }
+        .error-msg { color: #ef4444; font-size: 0.85rem; text-align: center; margin-top: 16px; display: none; font-weight: 500; }
     </style>
 </head>
 <body>
-
-<div class="login-wrapper">
-    <div class="login-info">
-        <div>
-            <h2>🔬 PredictiveBES</h2>
-            <p>Plataforma de inteligencia predictiva para sistemas de Bombeo Electro Sumergible (BES)</p>
-            <div class="badge">
-                <strong>📊 41 variables monitoreadas</strong><br>
-                <span style="font-size:0.8rem; color:#94a3b8;">LSTM · Random Forest · XGBoost</span>
-            </div>
+    <div class="login-card">
+        <div class="logo-container">
+            <h2>🔬 <span>Predictive</span>BES</h2>
+            <p>Software Predictivo para Diagnóstico de Fallas</p>
         </div>
-        <div style="font-size:0.7rem; color:#475569;">
-            Datos seguros en la nube
+        <div class="form-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="email" placeholder="usuario@empresa.com">
         </div>
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+        <button class="btn-login" id="btnLogin">Ingresar al Sistema</button>
+        <div class="error-msg" id="errorMsg">Credenciales inválidas. Intente nuevamente.</div>
     </div>
-
-    <div class="login-form-area">
-        <h3>🔐 Acceso al sistema</h3>
-        <p class="subtitle">Ingresa o regístrate para comenzar</p>
-
-        <div class="tabs">
-            <button class="tab-btn active" id="tabLogin">Iniciar sesión</button>
-            <button class="tab-btn" id="tabRegister">Registrarse</button>
-        </div>
-
-        <!-- ===== LOGIN ===== -->
-        <div class="form-container active" id="login-tab">
-            <form id="loginForm">
-                <div class="input-group">
-                    <label>📧 Correo electrónico</label>
-                    <input type="email" id="loginEmail" placeholder="demo@predictivebes.com" required>
-                </div>
-                <div class="input-group">
-                    <label>🔒 Contraseña</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="login-btn" id="loginBtn">
-                    Ingresar al sistema
-                </button>
-                <div class="error-message" id="loginError"></div>
-                <div class="success-message" id="loginSuccess"></div>
-            </form>
-        </div>
-
-        <!-- ===== REGISTRO ===== -->
-        <div class="form-container" id="register-tab">
-            <form id="registerForm">
-                <div class="input-group">
-                    <label>📧 Correo electrónico</label>
-                    <input type="email" id="registerEmail" placeholder="operador@empresa.com" required>
-                </div>
-                <div class="input-group">
-                    <label>🔒 Contraseña (mínimo 6 caracteres)</label>
-                    <input type="password" id="registerPassword" placeholder="••••••••" minlength="6" required>
-                </div>
-                <div class="input-group">
-                    <label>🔒 Confirmar contraseña</label>
-                    <input type="password" id="registerPasswordConfirm" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="login-btn" id="registerBtn">
-                    Crear cuenta
-                </button>
-                <div class="error-message" id="registerError"></div>
-                <div class="success-message" id="registerSuccess"></div>
-            </form>
-        </div>
-
-        <div class="demo-creds">
-            🧪 <strong>Cuenta de demostración</strong><br>
-            📧 <strong>demo@predictivebes.com</strong>  |  🔐 <strong>bes2025</strong>
-        </div>
-
-        <div class="back-link">
-            <a href="index.html">← Volver a la landing page</a>
-        </div>
-    </div>
-</div>
-
-<script>
-    // ============================================================
-    // CONFIGURACIÓN SUPABASE
-    // ============================================================
-    const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
-
-    console.log('🔑 Inicializando Supabase...');
-    console.log('📡 URL:', SUPABASE_URL);
-
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    // ============================================================
-    // ELEMENTOS DEL DOM - CON VERIFICACIÓN
-    // ============================================================
-    const tabLogin = document.getElementById('tabLogin');
-    const tabRegister = document.getElementById('tabRegister');
-    const loginTab = document.getElementById('login-tab');
-    const registerTab = document.getElementById('register-tab');
-
-    const loginForm = document.getElementById('loginForm');
-    const loginEmail = document.getElementById('loginEmail');
-    const loginPassword = document.getElementById('loginPassword');
-    const loginError = document.getElementById('loginError');
-    const loginSuccess = document.getElementById('loginSuccess');
-    const loginBtn = document.getElementById('loginBtn');
-
-    const registerForm = document.getElementById('registerForm');
-    const registerEmail = document.getElementById('registerEmail');
-    const registerPassword = document.getElementById('registerPassword');
-    const registerPasswordConfirm = document.getElementById('registerPasswordConfirm');
-    const registerError = document.getElementById('registerError');
-    const registerSuccess = document.getElementById('registerSuccess');
-    const registerBtn = document.getElementById('registerBtn');
-
-    // Verificar que todos los elementos existan
-    console.log('✅ Elementos del DOM cargados:');
-    console.log('  - tabLogin:', !!tabLogin);
-    console.log('  - tabRegister:', !!tabRegister);
-    console.log('  - registerBtn:', !!registerBtn);
-    console.log('  - registerForm:', !!registerForm);
-
-    // ============================================================
-    // FUNCIÓN PARA CAMBIAR TABS
-    // ============================================================
-    function cambiarTab(tab) {
-        console.log('📋 Cambiando a:', tab);
+    <script>
+        const supabase = window.supabase.createClient('https://qkpkmgmidffdqaqwfiho.supabase.co', 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke');
         
-        tabLogin.classList.remove('active');
-        tabRegister.classList.remove('active');
-        loginTab.classList.remove('active');
-        registerTab.classList.remove('active');
-        
-        if (tab === 'login') {
-            tabLogin.classList.add('active');
-            loginTab.classList.add('active');
-        } else {
-            tabRegister.classList.add('active');
-            registerTab.classList.add('active');
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) window.location.href = 'dashboard.html';
         }
-        
-        loginError.textContent = '';
-        loginSuccess.textContent = '';
-        registerError.textContent = '';
-        registerSuccess.textContent = '';
-    }
+        checkSession();
 
-    // ============================================================
-    // EVENTOS DE TABS - CON VERIFICACIÓN
-    // ============================================================
-    if (tabLogin) {
-        tabLogin.addEventListener('click', function() {
-            console.log('🔄 Click en tab Login');
-            cambiarTab('login');
-        });
-    } else {
-        console.error('❌ tabLogin no encontrado');
-    }
-
-    if (tabRegister) {
-        tabRegister.addEventListener('click', function() {
-            console.log('🔄 Click en tab Register');
-            cambiarTab('register');
-        });
-    } else {
-        console.error('❌ tabRegister no encontrado');
-    }
-
-    // ============================================================
-    // REGISTRO - CON VERIFICACIÓN
-    // ============================================================
-    if (registerForm) {
-        registerForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            console.log('📝 Formulario de registro enviado');
+        document.getElementById('btnLogin').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const btn = document.getElementById('btnLogin');
             
-            const email = registerEmail.value.trim();
-            const password = registerPassword.value;
-            const passwordConfirm = registerPasswordConfirm.value;
-
-            registerError.textContent = '';
-            registerSuccess.textContent = '';
-
-            // Validaciones
-            if (!email || !password || !passwordConfirm) {
-                registerError.textContent = '⚠️ Complete todos los campos.';
-                return;
-            }
-            if (!email.includes('@')) {
-                registerError.textContent = '⚠️ Ingrese un correo válido.';
-                return;
-            }
-            if (password.length < 6) {
-                registerError.textContent = '⚠️ La contraseña debe tener al menos 6 caracteres.';
-                return;
-            }
-            if (password !== passwordConfirm) {
-                registerError.textContent = '⚠️ Las contraseñas no coinciden.';
-                return;
-            }
-
-            registerBtn.disabled = true;
-            registerBtn.innerHTML = '⏳ Registrando...';
-
-            try {
-                console.log('📝 Intentando registrar:', email);
-
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: { 
-                        data: { role: 'operador' }
-                    }
-                });
-
-                if (error) {
-                    console.error('❌ Error de registro:', error);
-                    
-                    if (error.message.includes('User already registered')) {
-                        registerError.textContent = '❌ Este correo ya está registrado. Usa otro o inicia sesión.';
-                    } else if (error.message.includes('Password should be at least')) {
-                        registerError.textContent = '❌ La contraseña debe tener al menos 6 caracteres.';
-                    } else {
-                        registerError.textContent = '❌ ' + error.message;
-                    }
-                    
-                    registerBtn.disabled = false;
-                    registerBtn.innerHTML = 'Crear cuenta';
-                    return;
-                }
-
-                if (data.user) {
-                    console.log('✅ Usuario registrado:', data.user.email);
-                    registerSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión.';
-                    registerEmail.value = '';
-                    registerPassword.value = '';
-                    registerPasswordConfirm.value = '';
-                    
-                    setTimeout(() => {
-                        cambiarTab('login');
-                        loginEmail.value = email;
-                        loginPassword.value = '';
-                    }, 1500);
-                }
-
-            } catch (err) {
-                console.error('❌ Error:', err);
-                registerError.textContent = '❌ Error: ' + err.message;
-            } finally {
-                registerBtn.disabled = false;
-                registerBtn.innerHTML = 'Crear cuenta';
-            }
-        });
-    } else {
-        console.error('❌ registerForm no encontrado');
-    }
-
-    // ============================================================
-    // LOGIN - CON VERIFICACIÓN
-    // ============================================================
-    if (loginForm) {
-        loginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            console.log('🔑 Formulario de login enviado');
+            btn.textContent = 'Verificando...';
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             
-            const email = loginEmail.value.trim();
-            const password = loginPassword.value;
-
-            loginError.textContent = '';
-            loginSuccess.textContent = '';
-
-            if (!email || !password) {
-                loginError.textContent = '⚠️ Complete ambos campos.';
-                return;
-            }
-
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '⏳ Validando...';
-
-            try {
-                console.log('🔑 Intentando login:', email);
-
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) {
-                    console.error('❌ Error de login:', error);
-                    loginError.textContent = '❌ Correo o contraseña incorrectos. Usa: demo@predictivebes.com / bes2025';
-                    loginBtn.disabled = false;
-                    loginBtn.innerHTML = 'Ingresar al sistema';
-                    return;
-                }
-
-                if (data.user) {
-                    console.log('✅ Usuario autenticado:', data.user.email);
-                    loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
-                    
-                    localStorage.setItem('bes_user', JSON.stringify({
-                        id: data.user.id,
-                        email: data.user.email
-                    }));
-
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
-                }
-
-            } catch (err) {
-                console.error('❌ Error:', err);
-                loginError.textContent = '❌ Error: ' + err.message;
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = 'Ingresar al sistema';
+            if (error) {
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = error.message;
+                btn.textContent = 'Ingresar al Sistema';
+            } else {
+                window.location.href = 'dashboard.html';
             }
         });
-    } else {
-        console.error('❌ loginForm no encontrado');
-    }
-
-    console.log('🔐 Sistema de autenticación listo.');
-    console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
-    console.log('📋 O regístrate con un correo nuevo');
-</script>
+    </script>
 </body>
 </html>

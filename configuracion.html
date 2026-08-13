@@ -4,85 +4,187 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PredictiveBES · Configuración</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(30, 27, 75, 0.6);
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --accent: #8B5CF6;
+            --accent-hover: #7C3AED;
+            --border-color: rgba(139, 92, 246, 0.2);
+            --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
+            --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
+            --card-bg: rgba(30, 27, 75, 0.5);
+            --sidebar-bg: rgba(0, 0, 0, 0.6);
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f0f4fa; min-height: 100vh; display: flex; flex-direction: column; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 30px; }
+
         .sidebar {
-            position: fixed; left: 0; top: 0; bottom: 0; width: 240px; background: #0f172a; padding: 24px 16px;
-            display: flex; flex-direction: column; transition: all 0.3s; z-index: 100;
+            width: 220px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
         }
-        .sidebar .logo { display: flex; align-items: center; gap: 12px; padding: 8px 12px; margin-bottom: 32px; }
-        .sidebar .logo h2 { color: white; font-size: 1.2rem; font-weight: 700; }
-        .sidebar .logo h2 span { color: #3b82f6; }
-        .sidebar .logo .badge { background: #1e293b; color: #60a5fa; font-size: 0.5rem; padding: 2px 8px; border-radius: 30px; }
+        .sidebar .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+        }
+        .sidebar .logo .icon { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: white; }
+        .sidebar .logo h2 { font-size: 1.1rem; font-weight: 700; }
+        .sidebar .logo h2 span { color: var(--accent); }
+        .sidebar .logo .badge { font-size: 0.5rem; background: rgba(139, 92, 246, 0.2); color: var(--accent); padding: 2px 8px; border-radius: 30px; border: 1px solid var(--border-color); }
         .sidebar .nav-item {
-            display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
-            color: #94a3b8; text-decoration: none; transition: all 0.2s; margin-bottom: 4px; font-weight: 500; font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            font-weight: 500;
+            font-size: 0.85rem;
         }
-        .sidebar .nav-item:hover { background: #1e293b; color: white; }
-        .sidebar .nav-item.active { background: #1e293b; color: white; }
-        .sidebar .nav-item i { width: 20px; font-size: 1.1rem; }
-        .sidebar .nav-divider { border: none; border-top: 1px solid #1e293b; margin: 12px 0; }
-        .sidebar .nav-footer { margin-top: auto; padding: 12px 16px; color: #475569; font-size: 0.7rem; }
-        .main-content { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-        .navbar {
-            background: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 50;
+        .sidebar .nav-item:hover { background: rgba(139, 92, 246, 0.1); color: var(--text-primary); }
+        .sidebar .nav-item.active { background: rgba(139, 92, 246, 0.15); color: var(--accent); border: 1px solid var(--border-color); }
+        .sidebar .nav-item i { width: 20px; }
+        .sidebar .nav-divider { border: none; border-top: 1px solid var(--border-color); margin: 12px 0; }
+        .sidebar .nav-footer { margin-top: auto; padding: 12px 14px; color: var(--text-secondary); font-size: 0.65rem; opacity: 0.5; }
+
+        .main-content { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .navbar-top {
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
-        .navbar .left { display: flex; align-items: center; gap: 16px; }
-        .navbar .left h1 { font-size: 1.2rem; font-weight: 600; color: #0f172a; }
-        .navbar .left .breadcrumb { color: #64748b; font-size: 0.85rem; }
-        .navbar .right { display: flex; align-items: center; gap: 16px; }
-        .navbar .right .user { display: flex; align-items: center; gap: 8px; color: #0f172a; font-weight: 500; font-size: 0.9rem; }
-        .navbar .right .user .avatar { width: 36px; height: 36px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; }
-        .navbar .right .btn-logout { background: #ef4444; border: none; color: white; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.8rem; transition: all 0.2s; }
-        .navbar .right .btn-logout:hover { background: #dc2626; }
-        .content { padding: 32px; flex: 1; }
+        .navbar-top .left { display: flex; align-items: center; gap: 16px; }
+        .navbar-top .left h1 { font-size: 1.1rem; font-weight: 600; }
+        .navbar-top .left .breadcrumb { color: var(--text-secondary); font-size: 0.8rem; }
+        .navbar-top .right { display: flex; align-items: center; gap: 16px; }
+        .navbar-top .right .user { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-secondary); }
+        .navbar-top .right .user .avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.8rem; }
+        .navbar-top .right .btn-logout { background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); color: #EF4444; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: all 0.2s; font-family: inherit; }
+        .navbar-top .right .btn-logout:hover { background: rgba(239, 68, 68, 0.3); }
+        .sidebar-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.3rem; cursor: pointer; }
+
+        .content { padding: 28px 32px; flex: 1; }
         .page-title { margin-bottom: 24px; }
-        .page-title h2 { font-size: 1.6rem; color: #0f172a; }
-        .page-title p { color: #64748b; }
+        .page-title h2 { font-size: 1.5rem; font-weight: 700; }
+        .page-title p { color: var(--text-secondary); font-size: 0.9rem; }
 
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .card { background: white; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; }
-        .card h3 { font-size: 1rem; color: #0f172a; margin-bottom: 16px; }
-
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-weight: 600; font-size: 0.85rem; color: #1e293b; margin-bottom: 4px; }
-        .form-group input, .form-group select {
-            width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
-            font-family: inherit; font-size: 0.9rem; background: white;
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
         }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
+        .card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 16px; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-weight: 500; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .toggle-row:last-child { border: none; }
+        .toggle-row .info { font-size: 0.8rem; }
+        .toggle-row .info .desc { font-size: 0.65rem; color: var(--text-secondary); }
+
+        .toggle-switch {
+            width: 40px;
+            height: 22px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 30px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .toggle-switch.active { background: var(--accent); }
+        .toggle-switch .thumb {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all 0.2s;
+        }
+        .toggle-switch.active .thumb { left: 21px; }
 
         .btn-primary {
-            background: #0f172a; color: white; border: none; padding: 12px 24px; border-radius: 12px;
-            font-weight: 600; cursor: pointer; width: 100%; font-size: 0.95rem; transition: all 0.2s;
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.9rem;
+            margin-top: 8px;
         }
-        .btn-primary:hover { background: #1e293b; }
-
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .toggle-row:last-child { border: none; }
-        .toggle-row .info { font-size: 0.9rem; }
-        .toggle-row .info .desc { font-size: 0.75rem; color: #64748b; }
-        .toggle-switch {
-            width: 44px; height: 24px; background: #e2e8f0; border-radius: 30px; cursor: pointer;
-            position: relative; transition: all 0.2s;
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
         }
-        .toggle-switch.active { background: #3b82f6; }
-        .toggle-switch .thumb {
-            width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute;
-            top: 3px; left: 3px; transition: all 0.2s;
-        }
-        .toggle-switch.active .thumb { left: 23px; }
-
-        .sidebar-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #0f172a; }
 
         @media (max-width: 1024px) {
-            .sidebar { width: 200px; padding: 16px 12px; }
-            .sidebar .nav-item { font-size: 0.8rem; padding: 10px 12px; }
-            .main-content { margin-left: 200px; }
             .config-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 768px) {
@@ -90,7 +192,7 @@
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .sidebar-toggle { display: block; }
-            .navbar { padding: 12px 16px; flex-wrap: wrap; }
+            .navbar-top { padding: 12px 16px; flex-wrap: wrap; }
             .content { padding: 16px; }
         }
     </style>
@@ -99,21 +201,27 @@
 
     <!-- SIDEBAR -->
     <nav class="sidebar" id="sidebar">
-        <div class="logo"><h2>🔬 <span>Predictive</span>BES</h2><span class="badge">v1.0</span></div>
-        <a href="dashboard.html" class="nav-item"><i>📊</i> Dashboard</a>
-        <a href="monitoreo.html" class="nav-item"><i>📡</i> Monitoreo</a>
-        <a href="predictivo.html" class="nav-item"><i>🧠</i> Predictivo</a>
-        <a href="historial.html" class="nav-item"><i>📋</i> Historial</a>
-        <a href="reportes.html" class="nav-item"><i>📄</i> Reportes</a>
+        <div class="logo">
+            <div class="icon">🔬</div>
+            <h2>Predictive<span>BES</span></h2>
+            <span class="badge">v1.0</span>
+        </div>
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="monitoreo.html" class="nav-item"><i class="fas fa-chart-line"></i> Monitoreo</a>
+        <a href="mapa.html" class="nav-item"><i class="fas fa-map-marked-alt"></i> Mapa</a>
+        <a href="predictivo.html" class="nav-item"><i class="fas fa-brain"></i> Predictivo</a>
+        <a href="historial.html" class="nav-item"><i class="fas fa-history"></i> Historial</a>
+        <a href="reportes.html" class="nav-item"><i class="fas fa-file-alt"></i> Reportes</a>
         <hr class="nav-divider">
-        <a href="configuracion.html" class="nav-item active"><i>⚙️</i> Configuración</a>
-        <a href="perfil.html" class="nav-item"><i>👤</i> Perfil</a>
+        <a href="configuracion.html" class="nav-item active"><i class="fas fa-cog"></i> Configuración</a>
+        <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i> Perfil</a>
         <hr class="nav-divider">
-        <div class="nav-footer"><p>© 2025 PredictiveBES</p><p style="font-size:0.6rem; color:#334155;">BES Analytics · IA</p></div>
+        <div class="nav-footer"><p>© 2025 PredictiveBES</p><p style="font-size:0.55rem; opacity:0.6;">BES Analytics · IA</p></div>
     </nav>
 
+    <!-- MAIN -->
     <div class="main-content">
-        <header class="navbar">
+        <header class="navbar-top">
             <div class="left">
                 <button class="sidebar-toggle" id="sidebarToggle">☰</button>
                 <h1>Configuración</h1>
@@ -132,7 +240,6 @@
             </div>
 
             <div class="config-grid">
-                <!-- Umbrales -->
                 <div class="card">
                     <h3>📊 Umbrales de variables</h3>
                     <div class="form-group">
@@ -154,7 +261,6 @@
                     <button class="btn-primary">💾 Guardar umbrales</button>
                 </div>
 
-                <!-- Notificaciones -->
                 <div>
                     <div class="card" style="margin-bottom:16px;">
                         <h3>🔔 Notificaciones</h3>

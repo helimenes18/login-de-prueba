@@ -3,429 +3,662 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PredictiveBES · Monitoreo Inteligente para BES</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>PredictiveBES · IA para BES</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        /* ============================================================
+           ROOT - Variables (Combinación de ambos estilos)
+           ============================================================ */
+        :root {
+            /* AI Vision */
+            --ai-bg-start: #000000;
+            --ai-bg-end: #1E1B4B;
+            --ai-accent: #8B5CF6;
+            --ai-text: #E2E8F0;
+            
+            /* Enterprise SaaS */
+            --saas-bg: #F8FAFC;
+            --saas-panel: #FFFFFF;
+            --saas-primary: #1E3A8A;
+            --saas-accent: #0EA5E9;
+            --saas-text: #1E293B;
+            --saas-muted: #64748B;
+            
+            /* Combinado */
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(30, 27, 75, 0.6);
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --accent: #8B5CF6;
+            --accent-hover: #7C3AED;
+            --border-color: rgba(139, 92, 246, 0.2);
+            --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
+            --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
+            
+            --sidebar-bg: #0f0a2a;
+            --card-bg: rgba(30, 27, 75, 0.5);
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f0f4fa 0%, #e6edf6 100%);
-            color: #1a2c3e;
-            line-height: 1.5;
+            background: var(--gradient-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
         }
 
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 32px;
-        }
+        /* ============================================================
+           SCROLLBAR
+           ============================================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 30px; }
 
+        /* ============================================================
+           NAVBAR
+           ============================================================ */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 24px 0;
-            flex-wrap: wrap;
-            gap: 20px;
+            padding: 18px 40px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-
-        .logo {
+        .navbar .logo {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-
-        .logo-icon {
-            background: #0f2b3d;
-            width: 48px;
-            height: 48px;
+        .navbar .logo .icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 16px;
+            font-size: 1.2rem;
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
         }
-
-        .logo-icon i {
-            font-size: 1.8rem;
-            color: #3b82f6;
-        }
-
-        .logo-text h1 {
-            font-size: 1.5rem;
+        .navbar .logo h1 {
+            font-size: 1.3rem;
             font-weight: 700;
+            letter-spacing: -0.5px;
         }
-
-        .logo-text span {
-            font-size: 0.7rem;
-            color: #3b82f6;
-            background: #dbeafe;
+        .navbar .logo h1 span { color: var(--accent); }
+        .navbar .logo .badge {
+            font-size: 0.55rem;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent);
             padding: 2px 10px;
             border-radius: 30px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
         }
-
-        .nav-links {
+        .navbar .nav-links {
             display: flex;
-            gap: 32px;
+            gap: 30px;
             list-style: none;
         }
-
-        .nav-links a {
+        .navbar .nav-links a {
+            color: var(--text-secondary);
             text-decoration: none;
+            font-size: 0.85rem;
             font-weight: 500;
-            color: #334155;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover {
-            color: #2563eb;
-        }
-
-        .btn-login-nav {
-            background: #2563eb;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 40px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            font-family: inherit;
             transition: all 0.2s;
         }
-
-        .btn-login-nav:hover {
-            background: #1d4ed8;
+        .navbar .nav-links a:hover { color: var(--accent); }
+        .navbar .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .btn-login {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 22px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-login:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.3);
+        }
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
             transform: translateY(-2px);
         }
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            padding: 10px 28px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+        }
+        .hamburger { display: none; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
 
+        /* ============================================================
+           HERO
+           ============================================================ */
         .hero {
             text-align: center;
-            padding: 60px 0 50px;
+            padding: 80px 40px 60px;
+            max-width: 900px;
+            margin: 0 auto;
         }
-
-        .hero-badge {
-            background: #dbeafe;
+        .hero .tag {
             display: inline-block;
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent);
             padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 0.8rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #1e40af;
+            letter-spacing: 1px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
             margin-bottom: 24px;
         }
-
-        .hero h1 {
-            font-size: 3rem;
+        .hero h2 {
+            font-size: 3.2rem;
             font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+            line-height: 1.2;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #8B5CF6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .highlight {
-            color: #2563eb;
-        }
-
-        .hero-desc {
-            font-size: 1.2rem;
-            color: #475569;
-            max-width: 700px;
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 650px;
             margin: 0 auto 32px;
+            line-height: 1.8;
+        }
+        .hero .stats {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+        .hero .stats .stat {
+            text-align: center;
+        }
+        .hero .stats .stat .number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            display: block;
+        }
+        .hero .stats .stat .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
         }
 
-        .variables-section {
-            padding: 60px 0;
+        /* ============================================================
+           SECCIÓN VARIABLES
+           ============================================================ */
+        .section {
+            padding: 60px 40px;
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
         }
-
         .section-header {
             text-align: center;
             margin-bottom: 40px;
         }
-
-        .section-header h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .section-header p {
-            color: #475569;
-        }
-
-        .stats-mini {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-top: 24px;
-            flex-wrap: wrap;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 16px 28px;
-            border-radius: 60px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        .stat-card .number {
+        .section-header h3 {
             font-size: 1.8rem;
-            font-weight: 800;
-            color: #2563eb;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
         }
 
         .variables-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-            margin-top: 32px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
         }
-
         .var-tag {
-            background: white;
-            border-radius: 60px;
-            padding: 12px 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 10px 16px;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 500;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             transition: all 0.2s;
+            cursor: default;
         }
-
         .var-tag:hover {
-            border-color: #3b82f6;
+            border-color: var(--accent);
             transform: translateX(4px);
         }
-
         .var-tag i {
-            color: #3b82f6;
-            width: 28px;
-            font-size: 1.1rem;
+            color: var(--accent);
+            width: 20px;
+            font-size: 0.9rem;
         }
-
-        .var-category {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin-left: auto;
-            background: #f1f5f9;
-            padding: 4px 10px;
-            border-radius: 30px;
-        }
-
-        .model-section {
-            background: #0f172a;
-            color: white;
-            border-radius: 48px;
-            padding: 60px 48px;
-            margin: 40px 0;
-        }
-
-        .model-section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 24px;
-        }
-
-        .model-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 32px;
-            margin-top: 32px;
-        }
-
-        .model-card {
-            flex: 1;
+        .var-tag .category {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
             background: rgba(255,255,255,0.05);
-            border-radius: 28px;
-            padding: 24px;
-            border: 1px solid rgba(59,130,246,0.3);
+            padding: 2px 10px;
+            border-radius: 30px;
+            margin-left: auto;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .model-card i {
-            font-size: 2rem;
-            color: #60a5fa;
+        /* ============================================================
+           SECCIÓN MODELO (Cards estilo SaaS)
+           ============================================================ */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .model-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .model-card:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent);
+            box-shadow: var(--shadow-glow);
+        }
+        .model-card .icon {
+            font-size: 2.5rem;
+            color: var(--accent);
             margin-bottom: 16px;
         }
+        .model-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .model-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
 
+        /* ============================================================
+           IMPACT BOX
+           ============================================================ */
         .impact-box {
-            margin-top: 32px;
-            background: #1e293b;
-            border-radius: 24px;
-            padding: 20px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(30, 27, 75, 0.3));
+            border-radius: 20px;
+            padding: 32px 40px;
+            margin-top: 40px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .impact-box .left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .impact-box .left i {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+        .impact-box .left h4 {
+            font-size: 1.1rem;
+        }
+        .impact-box .left p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        .impact-box .badge-impact {
+            background: var(--accent);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
         }
 
-        footer {
-            background: #0f172a;
-            color: #94a3b8;
-            padding: 40px 0;
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        .footer {
             text-align: center;
-            border-radius: 32px 32px 0 0;
-            margin-top: 60px;
+            padding: 30px 20px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        .footer .social {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 12px;
+        }
+        .footer .social a {
+            color: var(--text-secondary);
+            transition: 0.2s;
+            font-size: 1.2rem;
+        }
+        .footer .social a:hover { color: var(--accent); }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            .navbar { padding: 16px 20px; flex-wrap: wrap; gap: 12px; }
+            .navbar .nav-links { display: none; }
+            .hamburger { display: block; }
+            .hero { padding: 50px 20px; }
+            .hero h2 { font-size: 2rem; }
+            .hero .stats { gap: 24px; }
+            .section { padding: 40px 20px; }
+            .variables-grid { grid-template-columns: 1fr 1fr; }
+            .model-grid { grid-template-columns: 1fr; }
+            .impact-box { flex-direction: column; text-align: center; }
+            .impact-box .left { flex-direction: column; }
+        }
+        @media (max-width: 480px) {
+            .variables-grid { grid-template-columns: 1fr; }
+            .hero .stats { flex-direction: column; gap: 12px; }
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 20px;
-            }
-            .hero h1 {
-                font-size: 2rem;
-            }
-            .model-section {
-                padding: 32px 24px;
-            }
-            .navbar {
-                flex-direction: column;
-                text-align: center;
-            }
+        /* ============================================================
+           ANIMACIONES
+           ============================================================ */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
+        .pulse { animation: pulse 2s infinite; }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
+            50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.3); }
+        }
+        .glow { animation: glow 3s infinite; }
     </style>
 </head>
 <body>
 
-<div class="container">
+    <!-- ============================================================
+    NAVBAR (Combinación de ambos estilos)
+    ============================================================ -->
     <nav class="navbar">
         <div class="logo">
-            <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
-            <div class="logo-text">
-                <h1>PredictiveBES <span>IA para BES</span></h1>
-            </div>
+            <div class="icon">🔬</div>
+            <h1>Predictive<span>BES</span></h1>
+            <span class="badge">AI v1.0</span>
         </div>
         <ul class="nav-links">
             <li><a href="#">Inicio</a></li>
             <li><a href="#variables">Variables</a></li>
             <li><a href="#modelo">Modelo</a></li>
+            <li><a href="#impacto">Impacto</a></li>
         </ul>
-        <button class="btn-login-nav" onclick="window.location.href='login.html'">
-            <i class="fas fa-key"></i> Acceder al sistema
-        </button>
+        <div class="nav-actions">
+            <button class="btn-login" onclick="window.location.href='login.html'">
+                <i class="fas fa-key"></i> Acceder
+            </button>
+            <button class="btn-primary" onclick="window.location.href='login.html'">
+                Comenzar <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="hamburger" onclick="this.nextElementSibling.style.display='flex'">☰</button>
+        </div>
     </nav>
 
-    <div class="hero">
-        <div class="hero-badge">
-            <i class="fas fa-microchip"></i> Mantenimiento Predictivo · Industria 4.0
+    <!-- ============================================================
+    HERO (Estilo AI Vision)
+    ============================================================ -->
+    <section class="hero">
+        <span class="tag"><i class="fas fa-microchip"></i> Inteligencia Artificial · Industria 4.0</span>
+        <h2>Anticipa fallas en Bombeo <br>Electro Sumergible con IA</h2>
+        <p>Monitoreo de <strong>41 variables</strong> en tiempo real · Redes <strong>LSTM</strong> · Detección temprana de anomalías con <strong>Random Forest</strong> y <strong>XGBoost</strong>.</p>
+        
+        <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="window.location.href='login.html'">
+                <i class="fas fa-chart-line"></i> Ver Dashboard
+            </button>
+            <button class="btn-secondary" onclick="document.getElementById('variables').scrollIntoView({behavior:'smooth'})">
+                <i class="fas fa-arrow-down"></i> Explorar Variables
+            </button>
         </div>
-        <h1>Anticipa fallas en <span class="highlight">Bombeo Electro Sumergible</span> con IA</h1>
-        <p class="hero-desc">
-            Monitoreo de 41 variables en tiempo real · Redes LSTM · Detección temprana de anomalías
-        </p>
-    </div>
 
-    <div id="variables" class="variables-section">
-        <div class="section-header">
-            <h2><i class="fas fa-database"></i> 41 variables operativas</h2>
-            <p>Nuestro modelo procesa cada señal para detectar patrones de falla antes de que ocurran</p>
-            <div class="stats-mini">
-                <div class="stat-card"><span class="number">41</span><br>variables</div>
-                <div class="stat-card"><span class="number">96.4%</span><br>precisión</div>
-                <div class="stat-card"><span class="number">-67%</span><br>paradas</div>
+        <div class="stats">
+            <div class="stat">
+                <span class="number">41</span>
+                <span class="label">Variables monitoreadas</span>
+            </div>
+            <div class="stat">
+                <span class="number">96.4%</span>
+                <span class="label">Precisión del modelo</span>
+            </div>
+            <div class="stat">
+                <span class="number">-67%</span>
+                <span class="label">Reducción de paradas</span>
             </div>
         </div>
-        <div class="variables-grid" id="variablesList"></div>
-    </div>
+    </section>
 
-    <div id="modelo" class="model-section">
-        <h2><i class="fas fa-brain"></i> ¿Cómo repercuten estas variables en el modelo?</h2>
+    <!-- ============================================================
+    VARIABLES (Estilo SaaS con grid)
+    ============================================================ -->
+    <section class="section" id="variables">
+        <div class="section-header">
+            <h3><i class="fas fa-database" style="color: var(--accent);"></i> 41 Variables Operativas</h3>
+            <p>Nuestro modelo procesa cada señal para detectar patrones de falla antes de que ocurran</p>
+        </div>
+        <div class="variables-grid" id="variablesList">
+            <!-- Las variables se generan con JavaScript -->
+        </div>
+    </section>
+
+    <!-- ============================================================
+    MODELO (Estilo SaaS con cards)
+    ============================================================ -->
+    <section class="section" id="modelo" style="background: rgba(0,0,0,0.2); border-radius: 40px; margin: 0 auto 40px; padding: 60px 40px;">
+        <div class="section-header">
+            <h3>🧠 ¿Cómo repercuten estas variables en el modelo?</h3>
+            <p>Tecnologías de inteligencia artificial aplicadas al monitoreo predictivo</p>
+        </div>
         <div class="model-grid">
             <div class="model-card">
-                <i class="fas fa-chart-line"></i>
-                <h3>Series temporales LSTM</h3>
-                <p>Analiza evolución de presión, temperatura y caudal para anticipar degradación</p>
+                <div class="icon"><i class="fas fa-chart-line"></i></div>
+                <h4>Series Temporales LSTM</h4>
+                <p>Analiza la evolución de presión, temperatura y caudal para anticipar la degradación de los equipos BES.</p>
             </div>
             <div class="model-card">
-                <i class="fas fa-tree"></i>
-                <h3>Random Forest</h3>
-                <p>Clasifica fallas mecánicas y eléctricas basándose en 41 características</p>
+                <div class="icon"><i class="fas fa-tree"></i></div>
+                <h4>Random Forest</h4>
+                <p>Clasifica fallas mecánicas y eléctricas basándose en las 41 características operativas del pozo.</p>
             </div>
             <div class="model-card">
-                <i class="fas fa-bolt"></i>
-                <h3>Detección de anomalías</h3>
-                <p>Identifica desbalances de voltaje, sobrecalentamiento y desgaste prematuro</p>
+                <div class="icon"><i class="fas fa-bolt"></i></div>
+                <h4>Detección de Anomalías</h4>
+                <p>Identifica desbalances de voltaje, sobrecalentamiento y desgaste prematuro antes de que ocurran.</p>
             </div>
         </div>
+    </section>
+
+    <!-- ============================================================
+    IMPACTO
+    ============================================================ -->
+    <section class="section" id="impacto">
         <div class="impact-box">
-            <i class="fas fa-chart-pie"></i> <strong>Impacto operativo:</strong> Reducción del 67% en paradas no programadas · Ahorro estimado de $2.3M anuales por pozo
+            <div class="left">
+                <i class="fas fa-chart-pie"></i>
+                <div>
+                    <h4>Impacto operativo</h4>
+                    <p>Reducción del <strong>67%</strong> en paradas no programadas · Ahorro estimado de <strong>$2.3M</strong> anuales por pozo</p>
+                </div>
+            </div>
+            <span class="badge-impact"><i class="fas fa-rocket"></i> ROI garantizado</span>
         </div>
-    </div>
-</div>
+    </section>
 
-<footer>
-    <p>© 2025 PredictiveBES · Desarrollado para la industria de hidrocarburos · Basado en CRISP-DM</p>
-</footer>
+    <!-- ============================================================
+    FOOTER
+    ============================================================ -->
+    <footer class="footer">
+        <p>© 2025 PredictiveBES · Desarrollado para la industria de hidrocarburos</p>
+        <div class="social">
+            <a href="#"><i class="fab fa-github"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+    </footer>
 
-<script>
-    // Variables en español (legibles)
-    const variables = [
-        { name: "Fallo del sistema", category: "estado", icon: "exclamation-triangle" },
-        { name: "Petróleo producido", category: "fluidos", icon: "oil-can" },
-        { name: "Gas producido", category: "fluidos", icon: "wind" },
-        { name: "Agua producida", category: "fluidos", icon: "tint" },
-        { name: "Corriente del variador", category: "eléctrica", icon: "bolt" },
-        { name: "Voltaje del variador", category: "eléctrica", icon: "bolt" },
-        { name: "Presión de entrada", category: "hidráulica", icon: "tachometer-alt" },
-        { name: "Temperatura de parada del motor", category: "térmica", icon: "thermometer-half" },
-        { name: "Temperatura del devanado", category: "térmica", icon: "thermometer-half" },
-        { name: "Frecuencia de salida", category: "eléctrica", icon: "waveform" },
-        { name: "Vibración eje X", category: "mecánica", icon: "waveform" },
-        { name: "Conteo de arranques", category: "operativa", icon: "power-off" },
-        { name: "Entrada de petróleo", category: "fluidos", icon: "oil-can" },
-        { name: "Entrada de agua", category: "fluidos", icon: "tint" },
-        { name: "Entrada de gas", category: "fluidos", icon: "wind" },
-        { name: "Entrada de líquidos", category: "fluidos", icon: "water" },
-        { name: "Saturación de gas entrada", category: "fluidos", icon: "chart-line" },
-        { name: "Eficiencia separador gas", category: "operativa", icon: "percent" },
-        { name: "Gas por anillo entrada", category: "fluidos", icon: "wind" },
-        { name: "Gas por BES entrada", category: "fluidos", icon: "wind" },
-        { name: "Gas por anillo", category: "fluidos", icon: "wind" },
-        { name: "Gas por BES", category: "fluidos", icon: "wind" },
-        { name: "Pb BES", category: "operativa", icon: "chart-line" },
-        { name: "Presión de descarga", category: "hidráulica", icon: "tachometer-alt" },
-        { name: "Fluido BES", category: "fluidos", icon: "water" },
-        { name: "Saturación gas descarga", category: "fluidos", icon: "chart-line" },
-        { name: "Delta presión bomba", category: "hidráulica", icon: "tachometer-alt" },
-        { name: "Presión promedio bomba", category: "hidráulica", icon: "tachometer-alt" },
-        { name: "Saturación gas en bomba", category: "fluidos", icon: "chart-line" },
-        { name: "Potencia de la bomba", category: "eléctrica", icon: "bolt" },
-        { name: "Potencia del variador", category: "eléctrica", icon: "bolt" },
-        { name: "Relación de potencia", category: "eléctrica", icon: "chart-line" },
-        { name: "Diferencia de potencia", category: "eléctrica", icon: "chart-line" },
-        { name: "Temperatura BES", category: "térmica", icon: "thermometer-half" },
-        { name: "Límite inferior", category: "operativa", icon: "arrow-down" }
-    ];
+    <!-- ============================================================
+    SCRIPT
+    ============================================================ -->
+    <script>
+        // ============================================================
+        // DATOS DE VARIABLES (En español)
+        // ============================================================
+        const variables = [
+            { name: "Fallo del sistema", category: "estado", icon: "exclamation-triangle" },
+            { name: "Petróleo producido", category: "fluidos", icon: "oil-can" },
+            { name: "Gas producido", category: "fluidos", icon: "wind" },
+            { name: "Agua producida", category: "fluidos", icon: "tint" },
+            { name: "Corriente del variador", category: "eléctrica", icon: "bolt" },
+            { name: "Voltaje del variador", category: "eléctrica", icon: "bolt" },
+            { name: "Presión de entrada", category: "hidráulica", icon: "tachometer-alt" },
+            { name: "Temp. parada del motor", category: "térmica", icon: "thermometer-half" },
+            { name: "Temp. del devanado", category: "térmica", icon: "thermometer-half" },
+            { name: "Frecuencia de salida", category: "eléctrica", icon: "waveform" },
+            { name: "Vibración eje X", category: "mecánica", icon: "waveform" },
+            { name: "Conteo de arranques", category: "operativa", icon: "power-off" },
+            { name: "Entrada de petróleo", category: "fluidos", icon: "oil-can" },
+            { name: "Entrada de agua", category: "fluidos", icon: "tint" },
+            { name: "Entrada de gas", category: "fluidos", icon: "wind" },
+            { name: "Entrada de líquidos", category: "fluidos", icon: "water" },
+            { name: "Saturación de gas entrada", category: "fluidos", icon: "chart-line" },
+            { name: "Eficiencia separador gas", category: "operativa", icon: "percent" },
+            { name: "Gas por anillo entrada", category: "fluidos", icon: "wind" },
+            { name: "Gas por BES entrada", category: "fluidos", icon: "wind" },
+            { name: "Gas por anillo", category: "fluidos", icon: "wind" },
+            { name: "Gas por BES", category: "fluidos", icon: "wind" },
+            { name: "Pb BES", category: "operativa", icon: "chart-line" },
+            { name: "Presión de descarga", category: "hidráulica", icon: "tachometer-alt" },
+            { name: "Fluido BES", category: "fluidos", icon: "water" },
+            { name: "Saturación gas descarga", category: "fluidos", icon: "chart-line" },
+            { name: "Delta presión bomba", category: "hidráulica", icon: "tachometer-alt" },
+            { name: "Presión promedio bomba", category: "hidráulica", icon: "tachometer-alt" },
+            { name: "Saturación gas en bomba", category: "fluidos", icon: "chart-line" },
+            { name: "Potencia de la bomba", category: "eléctrica", icon: "bolt" },
+            { name: "Potencia del variador", category: "eléctrica", icon: "bolt" },
+            { name: "Relación de potencia", category: "eléctrica", icon: "chart-line" },
+            { name: "Diferencia de potencia", category: "eléctrica", icon: "chart-line" },
+            { name: "Temperatura BES", category: "térmica", icon: "thermometer-half" },
+            { name: "Límite inferior", category: "operativa", icon: "arrow-down" }
+        ];
 
-    function getIconClass(iconName) {
-        return `<i class="fas fa-${iconName}"></i>`;
-    }
+        // ============================================================
+        // RENDERIZAR VARIABLES
+        // ============================================================
+        const container = document.getElementById('variablesList');
+        if (container) {
+            variables.forEach(v => {
+                const tag = document.createElement('div');
+                tag.className = 'var-tag';
+                tag.innerHTML = `
+                    <i class="fas fa-${v.icon}"></i>
+                    <span style="flex:1;">${v.name}</span>
+                    <span class="category">${v.category}</span>
+                `;
+                container.appendChild(tag);
+            });
+        }
 
-    function getCategoryClass(category) {
-        const classes = {
-            'hidráulica': 'hidráulica',
-            'térmica': 'térmica',
-            'eléctrica': 'eléctrica',
-            'fluidos': 'fluidos',
-            'mecánica': 'mecánica',
-            'operativa': 'operativa',
-            'estado': 'estado'
-        };
-        return classes[category] || 'operativa';
-    }
+        // ============================================================
+        // CONEXIÓN CON SUPABASE (Solo para verificar)
+        // ============================================================
+        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+        
+        console.log('🔑 PredictiveBES - IA para BES');
+        console.log('📡 Conectado a Supabase:', SUPABASE_URL);
+        console.log('📊 Variables cargadas:', variables.length);
 
-    const container = document.getElementById('variablesList');
-    if (container) {
-        variables.forEach(varItem => {
-            const tag = document.createElement('div');
-            tag.className = 'var-tag';
-            tag.innerHTML = `
-                ${getIconClass(varItem.icon)}
-                <span style="flex:1; font-weight: 500;">${varItem.name}</span>
-                <span class="var-category">${varItem.category}</span>
-            `;
-            container.appendChild(tag);
-        });
-    }
-</script>
+        // Verificar sesión (si el usuario ya está logueado, mostrar botón de acceso directo)
+        async function verificarSesion() {
+            try {
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    console.log('👤 Sesión activa:', session.user.email);
+                    // Cambiar el texto del botón "Acceder" por "Ir al Dashboard"
+                    const loginBtn = document.querySelector('.btn-login');
+                    if (loginBtn) {
+                        loginBtn.innerHTML = '<i class="fas fa-chart-line"></i> Dashboard';
+                        loginBtn.onclick = () => window.location.href = 'dashboard.html';
+                    }
+                }
+            } catch (e) {
+                console.log('👤 Usuario no autenticado');
+            }
+        }
+        verificarSesion();
+    </script>
+
 </body>
 </html>
