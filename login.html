@@ -466,14 +466,13 @@
     console.log('📡 Conectado a Supabase:', SUPABASE_URL);
 
     // ============================================================
-    // 2. VERIFICAR SESIÓN AL CARGAR LA PÁGINA (CORRECCIÓN PRINCIPAL)
+    // 2. VERIFICAR SESIÓN AL CARGAR LA PÁGINA
     // ============================================================
     async function verificarEstadoInicial() {
         try {
             const { data: { session }, error } = await supabaseClient.auth.getSession();
             
             if (session) {
-                // Si ya está logueado (por ejemplo, acaba de volver de Google con éxito)
                 console.log("✅ Sesión activa detectada, redirigiendo...");
                 window.location.href = 'dashboard.html';
             } else {
@@ -484,11 +483,10 @@
         }
     }
 
-    // Ejecutar la verificación inicial al cargar la página
     verificarEstadoInicial();
 
     // ============================================================
-    // 3. ESCUCHADOR DE CAMBIOS DE ESTADO (CUANDO EL USUARIO INICIA SESIÓN)
+    // 3. ESCUCHADOR DE CAMBIOS DE ESTADO
     // ============================================================
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
         console.log("📡 Evento de autenticación:", event, session);
@@ -538,25 +536,34 @@
             loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar al sistema';
         } else {
             loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
-            // El onAuthStateChange se encarga de la redirección
         }
     });
 
     // ============================================================
-    // 5. INICIO DE SESIÓN CON GOOGLE
+    // 5. INICIO DE SESIÓN CON GOOGLE (CON DIAGNÓSTICO)
     // ============================================================
     const googleBtn = document.getElementById('googleBtn');
     const googleError = document.getElementById('googleError');
 
+    // Verificar si el botón existe
+    if (googleBtn) {
+        console.log("✅ Botón de Google encontrado en el DOM");
+    } else {
+        console.error("❌ Botón de Google NO encontrado en el DOM");
+    }
+
     googleBtn.addEventListener('click', async (e) => {
         e.preventDefault();
+        console.log("🔄 Intentando conectar con Google...");
 
         googleError.textContent = '';
         googleBtn.disabled = true;
         googleBtn.innerHTML = '⏳ Conectando con Google...';
 
         try {
-            const { error } = await supabaseClient.auth.signInWithOAuth({
+            console.log("📤 Enviando solicitud a Supabase...");
+
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: window.location.origin + '/dashboard.html'
@@ -564,8 +571,8 @@
             });
 
             if (error) {
-                googleError.textContent = '❌ Hubo un problema al conectar con Google.';
-                console.error('Error OAuth:', error.message);
+                console.error("❌ Error OAuth:", error.message);
+                googleError.textContent = '❌ Hubo un problema al conectar con Google: ' + error.message;
                 googleBtn.disabled = false;
                 googleBtn.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
@@ -576,12 +583,17 @@
                     </svg>
                     Iniciar sesión con Google
                 `;
+                return;
             }
-            // Si no hay error, la redirección a Google ocurre automáticamente
-            // y al volver, verificarEstadoInicial() detectará la sesión
+
+            if (data) {
+                console.log("✅ Solicitud a Google exitosa, redirigiendo...");
+                // La redirección a Google ocurre automáticamente
+                // Al volver, verificarEstadoInicial() detectará la sesión
+            }
 
         } catch (err) {
-            console.error('❌ Error inesperado:', err);
+            console.error("❌ Error inesperado:", err);
             googleError.textContent = '❌ Error: ' + err.message;
             googleBtn.disabled = false;
             googleBtn.innerHTML = `
