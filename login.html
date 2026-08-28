@@ -484,11 +484,23 @@
     console.log('📡 Conectado a Supabase:', SUPABASE_URL);
 
     // ============================================================
-    // CERRAR SESIÓN FORZADO AL CARGAR LA PÁGINA
+    // MANEJO DE SESIÓN AL CARGAR LA PÁGINA (CORREGIDO)
     // ============================================================
     window.addEventListener('DOMContentLoaded', async () => {
-        await supabaseClient.auth.signOut();
-        localStorage.removeItem('bes_user');
+        // Verificamos si el usuario ya viene autenticado desde Google
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (session) {
+            // Si hay sesión activa, guardamos los datos básicos y lo enviamos al dashboard
+            localStorage.setItem('bes_user', JSON.stringify({
+                id: session.user.id,
+                email: session.user.email
+            }));
+            window.location.replace('dashboard.html');
+        } else {
+            // Si no hay sesión, simplemente nos aseguramos de que el almacenamiento local esté limpio
+            localStorage.removeItem('bes_user');
+        }
     });
 
     // ============================================================
