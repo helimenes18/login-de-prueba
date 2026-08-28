@@ -466,17 +466,28 @@
     console.log('📡 Conectado a Supabase:', SUPABASE_URL);
 
     // ============================================================
-    // 2. ESCUCHADOR GLOBAL DE ESTADO (CORRECCIÓN PRINCIPAL PARA GOOGLE)
+    // 2. ESCUCHADOR GLOBAL DE ESTADO (CON TU CORRECCIÓN)
     // ============================================================
     supabaseClient.auth.onAuthStateChange((event, session) => {
-        console.log('📡 Evento de autenticación:', event, session);
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            if (session) {
-                console.log('✅ Sesión activa detectada, redirigiendo...');
-                window.location.href = 'dashboard.html';
-            }
+        console.log("📡 Evento de autenticación:", event, session);
+
+        // SOLO redirigir si el evento es SIGNED_IN o si ya hay una sesión válida activa
+        if (event === 'SIGNED_IN' && session) {
+            console.log("✅ Redirigiendo al dashboard...");
+            window.location.href = 'dashboard.html';
         }
     });
+
+    // ============================================================
+    // 2.5 VERIFICAR SESIÓN AL CARGAR LA PÁGINA
+    // ============================================================
+    (async function verificarSesionAlCargar() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+            console.log("✅ Sesión activa detectada al cargar, redirigiendo...");
+            window.location.href = 'dashboard.html';
+        }
+    })();
 
     // ============================================================
     // 3. INICIO DE SESIÓN CON CORREO Y CONTRASEÑA
@@ -522,7 +533,7 @@
     });
 
     // ============================================================
-    // 4. INICIO DE SESIÓN CON GOOGLE (CORRECCIÓN DE REDIRECCIÓN)
+    // 4. INICIO DE SESIÓN CON GOOGLE
     // ============================================================
     const googleBtn = document.getElementById('googleBtn');
     const googleError = document.getElementById('googleError');
@@ -537,7 +548,7 @@
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin + '/dashboard.html'
+                redirectTo: 'https://login-de-prueba-yibq.vercel.app/dashboard.html'
             }
         });
 
@@ -558,7 +569,7 @@
     });
 
     // ============================================================
-    // 5. REGISTRO DE USUARIO (TAL CUAL COMO ESTABA ANTES)
+    // 5. REGISTRO DE USUARIO
     // ============================================================
     const registerForm = document.getElementById('registerForm');
     const registerEmail = document.getElementById('registerEmail');
