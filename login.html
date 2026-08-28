@@ -8,9 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ============================================================
-           ROOT - Variables (Estilo combinado)
-           ============================================================ */
         :root {
             --bg-primary: #0a0a1a;
             --bg-secondary: #111827;
@@ -24,6 +21,8 @@
             --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
             --input-bg: rgba(255,255,255,0.05);
             --card-bg: rgba(30, 27, 75, 0.5);
+            --google-color: #EA4335;
+            --google-hover: #D33426;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -39,16 +38,10 @@
             padding: 24px;
         }
 
-        /* ============================================================
-           SCROLLBAR
-           ============================================================ */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a2e; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 30px; }
 
-        /* ============================================================
-           LOGIN WRAPPER
-           ============================================================ */
         .login-wrapper {
             display: flex;
             max-width: 1000px;
@@ -62,9 +55,6 @@
             min-height: 550px;
         }
 
-        /* ============================================================
-           PANEL IZQUIERDO (Info)
-           ============================================================ */
         .login-info {
             background: rgba(0, 0, 0, 0.4);
             padding: 48px 36px;
@@ -125,9 +115,6 @@
             margin-top: 20px;
         }
 
-        /* ============================================================
-           PANEL DERECHO (Formulario)
-           ============================================================ */
         .login-form-area {
             width: 60%;
             padding: 48px 44px;
@@ -146,9 +133,6 @@
             font-size: 0.9rem;
         }
 
-        /* ============================================================
-           TABS
-           ============================================================ */
         .tabs {
             display: flex;
             gap: 8px;
@@ -180,9 +164,6 @@
             background: rgba(255,255,255,0.05);
         }
 
-        /* ============================================================
-           FORMULARIOS
-           ============================================================ */
         .form-container { display: none; }
         .form-container.active { display: block; }
 
@@ -216,9 +197,6 @@
             color: rgba(255,255,255,0.3);
         }
 
-        /* ============================================================
-           BOTONES
-           ============================================================ */
         .login-btn {
             width: 100%;
             background: var(--accent);
@@ -244,9 +222,57 @@
             transform: none;
         }
 
-        /* ============================================================
-           MENSAJES
-           ============================================================ */
+        .google-btn {
+            width: 100%;
+            background: white;
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1a1a2e;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .google-btn:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+        .google-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 16px 0 8px 0;
+        }
+        .divider .line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        .divider .text {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         .error-message {
             color: #EF4444;
             font-size: 0.8rem;
@@ -262,9 +288,6 @@
             min-height: 28px;
         }
 
-        /* ============================================================
-           CREDENCIALES DEMO
-           ============================================================ */
         .demo-creds {
             background: rgba(255,255,255,0.05);
             border-radius: 16px;
@@ -295,9 +318,6 @@
             color: var(--text-primary);
         }
 
-        /* ============================================================
-           BACK LINK
-           ============================================================ */
         .back-link {
             text-align: center;
             margin-top: 16px;
@@ -312,9 +332,6 @@
             color: var(--accent);
         }
 
-        /* ============================================================
-           RESPONSIVE
-           ============================================================ */
         @media (max-width: 780px) {
             .login-wrapper { flex-direction: column; border-radius: 32px; }
             .login-info { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); padding: 32px 24px; }
@@ -340,7 +357,7 @@
             </div>
             <p>Plataforma de inteligencia predictiva para sistemas de Bombeo Electro Sumergible (BES) con IA.</p>
             <div class="badge-list">
-                <span class="badge">41 variables</span>
+                <span class="badge">35 variables</span>
                 <span class="badge">LSTM</span>
                 <span class="badge">Random Forest</span>
                 <span class="badge">XGBoost</span>
@@ -380,6 +397,23 @@
                 <div class="error-message" id="loginError"></div>
                 <div class="success-message" id="loginSuccess"></div>
             </form>
+
+            <div class="divider">
+                <span class="line"></span>
+                <span class="text">O continúa con</span>
+                <span class="line"></span>
+            </div>
+
+            <button class="google-btn" id="googleBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Iniciar sesión con Google
+            </button>
+            <div class="error-message" id="googleError"></div>
         </div>
 
         <!-- ===== REGISTRO ===== -->
@@ -403,6 +437,23 @@
                 <div class="error-message" id="registerError"></div>
                 <div class="success-message" id="registerSuccess"></div>
             </form>
+
+            <div class="divider">
+                <span class="line"></span>
+                <span class="text">O regístrate con</span>
+                <span class="line"></span>
+            </div>
+
+            <button class="google-btn" id="googleRegisterBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Registrarse con Google
+            </button>
+            <div class="error-message" id="googleRegisterError"></div>
         </div>
 
         <!-- ===== DEMO ===== -->
@@ -435,7 +486,6 @@
     // ============================================================
     // CERRAR SESIÓN FORZADO AL CARGAR LA PÁGINA
     // ============================================================
-    // Esto asegura que SIEMPRE pida correo y clave, eliminando cualquier sesión activa
     window.addEventListener('DOMContentLoaded', async () => {
         await supabaseClient.auth.signOut();
         localStorage.removeItem('bes_user');
@@ -464,6 +514,11 @@
     const registerSuccess = document.getElementById('registerSuccess');
     const registerBtn = document.getElementById('registerBtn');
 
+    const googleBtn = document.getElementById('googleBtn');
+    const googleRegisterBtn = document.getElementById('googleRegisterBtn');
+    const googleError = document.getElementById('googleError');
+    const googleRegisterError = document.getElementById('googleRegisterError');
+
     const demoBox = document.getElementById('demoBox');
 
     // ============================================================
@@ -487,6 +542,8 @@
         loginSuccess.textContent = '';
         registerError.textContent = '';
         registerSuccess.textContent = '';
+        googleError.textContent = '';
+        googleRegisterError.textContent = '';
     }
 
     tabLogin.addEventListener('click', () => cambiarTab('login'));
@@ -504,7 +561,110 @@
     }
 
     // ============================================================
-    // REGISTRO
+    // LOGIN CON GOOGLE
+    // ============================================================
+    async function iniciarLoginGoogle() {
+        googleError.textContent = '';
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '⏳ Conectando con Google...';
+
+        try {
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/dashboard.html',
+                },
+            });
+
+            if (error) {
+                googleError.textContent = '❌ ' + error.message;
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    </svg>
+                    Iniciar sesión con Google
+                `;
+                return;
+            }
+
+            if (data) {
+                console.log('🔑 Redirigiendo a Google...');
+            }
+
+        } catch (err) {
+            googleError.textContent = '❌ Error: ' + err.message;
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Iniciar sesión con Google
+            `;
+        }
+    }
+
+    // ============================================================
+    // REGISTRO CON GOOGLE
+    // ============================================================
+    async function iniciarRegistroGoogle() {
+        googleRegisterError.textContent = '';
+        googleRegisterBtn.disabled = true;
+        googleRegisterBtn.innerHTML = '⏳ Conectando con Google...';
+
+        try {
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/dashboard.html',
+                },
+            });
+
+            if (error) {
+                googleRegisterError.textContent = '❌ ' + error.message;
+                googleRegisterBtn.disabled = false;
+                googleRegisterBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    </svg>
+                    Registrarse con Google
+                `;
+                return;
+            }
+
+            if (data) {
+                console.log('🔑 Redirigiendo a Google para registro...');
+            }
+
+        } catch (err) {
+            googleRegisterError.textContent = '❌ Error: ' + err.message;
+            googleRegisterBtn.disabled = false;
+            googleRegisterBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Registrarse con Google
+            `;
+        }
+    }
+
+    googleBtn.addEventListener('click', iniciarLoginGoogle);
+    googleRegisterBtn.addEventListener('click', iniciarRegistroGoogle);
+
+    // ============================================================
+    // REGISTRO - CON MANEJO DE ERRORES CORRECTO
     // ============================================================
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -513,15 +673,17 @@
         const password = registerPassword.value;
         const confirm = registerPasswordConfirm.value;
 
+        // LIMPIAR MENSAJES ANTERIORES
         registerError.textContent = '';
         registerSuccess.textContent = '';
 
+        // ===== VALIDACIONES =====
         if (!email || !password || !confirm) {
             registerError.textContent = '⚠️ Complete todos los campos.';
             return;
         }
-        if (!email.includes('@')) {
-            registerError.textContent = '⚠️ Ingrese un correo válido.';
+        if (!email.includes('@') || !email.includes('.')) {
+            registerError.textContent = '⚠️ Ingrese un correo electrónico válido.';
             return;
         }
         if (password.length < 6) {
@@ -533,6 +695,7 @@
             return;
         }
 
+        // ===== DESHABILITAR BOTÓN =====
         registerBtn.disabled = true;
         registerBtn.innerHTML = '⏳ Registrando...';
 
@@ -540,37 +703,73 @@
             const { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password,
-                options: { data: { role: 'operador' } }
+                options: { 
+                    data: { role: 'operador' },
+                    emailRedirectTo: window.location.origin
+                }
             });
 
+            // ===== SI HAY ERROR =====
             if (error) {
-                registerError.textContent = '❌ ' + error.message;
+                console.error('❌ Error de registro:', error);
+                
+                // 🔴 MANEJO DE ERRORES ESPECÍFICOS
+                if (error.message.includes('User already registered')) {
+                    registerError.textContent = '❌ Este correo ya está registrado. Usa "Iniciar sesión" o prueba con otro correo.';
+                } else if (error.message.includes('rate limit') || error.message.includes('Too Many Requests')) {
+                    registerError.textContent = '⏳ Demasiados intentos. Espera 1 minuto y vuelve a intentar.';
+                } else if (error.message.includes('Password should be at least')) {
+                    registerError.textContent = '❌ La contraseña debe tener al menos 6 caracteres.';
+                } else if (error.message.includes('Invalid email')) {
+                    registerError.textContent = '❌ El correo electrónico no es válido.';
+                } else {
+                    registerError.textContent = '❌ ' + error.message;
+                }
+                
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear cuenta';
                 return;
             }
 
-            if (data.user) {
-                registerSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión.';
-                registerEmail.value = '';
-                registerPassword.value = '';
-                registerPasswordConfirm.value = '';
-
-                setTimeout(() => {
-                    cambiarTab('login');
-                    loginEmail.value = email;
-                    loginPassword.value = '';
-                }, 1500);
+            // ===== SI NO HAY USUARIO (fallo silencioso) =====
+            if (!data.user) {
+                registerError.textContent = '❌ No se pudo crear la cuenta. Verifica tus datos e intenta de nuevo.';
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear cuenta';
+                return;
             }
 
+            // ===== ✅ ÉXITO: CUENTA CREADA =====
+            console.log('✅ Usuario registrado:', data.user.email);
+            registerSuccess.textContent = '✅ ¡Cuenta creada exitosamente! Ahora inicia sesión.';
+            
+            // LIMPIAR CAMPOS
+            registerEmail.value = '';
+            registerPassword.value = '';
+            registerPasswordConfirm.value = '';
+
+            // CAMBIAR A LOGIN AUTOMÁTICAMENTE
+            setTimeout(() => {
+                cambiarTab('login');
+                loginEmail.value = email;
+                loginPassword.value = '';
+                // Mostrar mensaje de éxito en login también
+                loginSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión con tus credenciales.';
+            }, 1500);
+
         } catch (err) {
-            registerError.textContent = '❌ Error: ' + err.message;
+            // ===== ERROR INESPERADO =====
+            console.error('❌ Error inesperado:', err);
+            registerError.textContent = '❌ Error inesperado: ' + err.message;
         } finally {
+            // ===== REACTIVAR BOTÓN =====
             registerBtn.disabled = false;
             registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Crear cuenta';
         }
     });
 
     // ============================================================
-    // LOGIN
+    // LOGIN (con manejo de errores)
     // ============================================================
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -596,7 +795,18 @@
             });
 
             if (error) {
-                loginError.textContent = '❌ ' + error.message;
+                // MANEJO DE ERRORES ESPECÍFICOS
+                if (error.message.includes('Invalid login credentials')) {
+                    loginError.textContent = '❌ Correo o contraseña incorrectos. Verifica tus credenciales.';
+                } else if (error.message.includes('Email not confirmed')) {
+                    loginError.textContent = '❌ El correo no ha sido confirmado. Revisa tu bandeja de entrada.';
+                } else if (error.message.includes('rate limit')) {
+                    loginError.textContent = '⏳ Demasiados intentos. Espera 1 minuto y vuelve a intentar.';
+                } else {
+                    loginError.textContent = '❌ ' + error.message;
+                }
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar al sistema';
                 return;
             }
 
@@ -621,6 +831,7 @@
     });
 
     console.log('🔐 Sistema de autenticación listo.');
+    console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
 </script>
 
 </body>

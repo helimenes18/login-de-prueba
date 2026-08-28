@@ -9,24 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ============================================================
-           ROOT - Variables (Combinación de ambos estilos)
+           ROOT - Variables (Estilo combinado)
            ============================================================ */
         :root {
-            /* AI Vision */
-            --ai-bg-start: #000000;
-            --ai-bg-end: #1E1B4B;
-            --ai-accent: #8B5CF6;
-            --ai-text: #E2E8F0;
-            
-            /* Enterprise SaaS */
-            --saas-bg: #F8FAFC;
-            --saas-panel: #FFFFFF;
-            --saas-primary: #1E3A8A;
-            --saas-accent: #0EA5E9;
-            --saas-text: #1E293B;
-            --saas-muted: #64748B;
-            
-            /* Combinado */
             --bg-primary: #0a0a1a;
             --bg-secondary: #111827;
             --bg-card: rgba(30, 27, 75, 0.6);
@@ -37,13 +22,12 @@
             --border-color: rgba(139, 92, 246, 0.2);
             --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
             --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
-            
-            --sidebar-bg: #0f0a2a;
             --card-bg: rgba(30, 27, 75, 0.5);
+            --sidebar-bg: rgba(0, 0, 0, 0.6);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background: var(--gradient-main);
@@ -52,9 +36,6 @@
             line-height: 1.6;
         }
 
-        /* ============================================================
-           SCROLLBAR
-           ============================================================ */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a2e; }
         ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 30px; }
@@ -261,7 +242,7 @@
 
         .variables-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 12px;
         }
         .var-tag {
@@ -288,7 +269,7 @@
             font-size: 0.9rem;
         }
         .var-tag .category {
-            font-size: 0.6rem;
+            font-size: 0.55rem;
             color: var(--text-secondary);
             background: rgba(255,255,255,0.05);
             padding: 2px 10px;
@@ -299,7 +280,7 @@
         }
 
         /* ============================================================
-           SECCIÓN MODELO (Cards estilo SaaS)
+           SECCIÓN MODELO
            ============================================================ */
         .model-grid {
             display: grid;
@@ -420,27 +401,12 @@
             .variables-grid { grid-template-columns: 1fr; }
             .hero .stats { flex-direction: column; gap: 12px; }
         }
-
-        /* ============================================================
-           ANIMACIONES
-           ============================================================ */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .pulse { animation: pulse 2s infinite; }
-        
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
-            50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.3); }
-        }
-        .glow { animation: glow 3s infinite; }
     </style>
 </head>
 <body>
 
     <!-- ============================================================
-    NAVBAR (Combinación de ambos estilos)
+    NAVBAR
     ============================================================ -->
     <nav class="navbar">
         <div class="logo">
@@ -466,13 +432,13 @@
     </nav>
 
     <!-- ============================================================
-    HERO (Estilo AI Vision)
+    HERO
     ============================================================ -->
     <section class="hero">
         <span class="tag"><i class="fas fa-microchip"></i> Inteligencia Artificial · Industria 4.0</span>
         <h2>Anticipa fallas en Bombeo <br>Electro Sumergible con IA</h2>
-        <p>Monitoreo de <strong>41 variables</strong> en tiempo real · Redes <strong>LSTM</strong> · Detección temprana de anomalías con <strong>Random Forest</strong> y <strong>XGBoost</strong>.</p>
-        
+        <p>Monitoreo de <strong>35 variables</strong> en tiempo real · Redes <strong>LSTM</strong> · Detección temprana de anomalías con <strong>Random Forest</strong> y <strong>XGBoost</strong>.</p>
+
         <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
             <button class="btn-primary" onclick="window.location.href='login.html'">
                 <i class="fas fa-chart-line"></i> Ver Dashboard
@@ -484,7 +450,7 @@
 
         <div class="stats">
             <div class="stat">
-                <span class="number">41</span>
+                <span class="number">35</span>
                 <span class="label">Variables monitoreadas</span>
             </div>
             <div class="stat">
@@ -499,11 +465,11 @@
     </section>
 
     <!-- ============================================================
-    VARIABLES (Estilo SaaS con grid)
+    VARIABLES
     ============================================================ -->
     <section class="section" id="variables">
         <div class="section-header">
-            <h3><i class="fas fa-database" style="color: var(--accent);"></i> 41 Variables Operativas</h3>
+            <h3><i class="fas fa-database" style="color: var(--accent);"></i> 35 Variables Operativas</h3>
             <p>Nuestro modelo procesa cada señal para detectar patrones de falla antes de que ocurran</p>
         </div>
         <div class="variables-grid" id="variablesList">
@@ -512,7 +478,7 @@
     </section>
 
     <!-- ============================================================
-    MODELO (Estilo SaaS con cards)
+    MODELO
     ============================================================ -->
     <section class="section" id="modelo" style="background: rgba(0,0,0,0.2); border-radius: 40px; margin: 0 auto 40px; padding: 60px 40px;">
         <div class="section-header">
@@ -528,7 +494,7 @@
             <div class="model-card">
                 <div class="icon"><i class="fas fa-tree"></i></div>
                 <h4>Random Forest</h4>
-                <p>Clasifica fallas mecánicas y eléctricas basándose en las 41 características operativas del pozo.</p>
+                <p>Clasifica fallas mecánicas y eléctricas basándose en las 35 características operativas del pozo.</p>
             </div>
             <div class="model-card">
                 <div class="icon"><i class="fas fa-bolt"></i></div>
@@ -567,49 +533,46 @@
         </div>
     </footer>
 
-    <!-- ============================================================
-    SCRIPT
-    ============================================================ -->
     <script>
         // ============================================================
-        // DATOS DE VARIABLES (En español)
+        // VARIABLES - NOMBRES EN ESPAÑOL (35 variables)
         // ============================================================
         const variables = [
-            { name: "Fallo del sistema", category: "estado", icon: "exclamation-triangle" },
-            { name: "Petróleo producido", category: "fluidos", icon: "oil-can" },
-            { name: "Gas producido", category: "fluidos", icon: "wind" },
-            { name: "Agua producida", category: "fluidos", icon: "tint" },
-            { name: "Corriente del variador", category: "eléctrica", icon: "bolt" },
-            { name: "Voltaje del variador", category: "eléctrica", icon: "bolt" },
-            { name: "Presión de entrada", category: "hidráulica", icon: "tachometer-alt" },
-            { name: "Temp. parada del motor", category: "térmica", icon: "thermometer-half" },
-            { name: "Temp. del devanado", category: "térmica", icon: "thermometer-half" },
-            { name: "Frecuencia de salida", category: "eléctrica", icon: "waveform" },
-            { name: "Vibración eje X", category: "mecánica", icon: "waveform" },
-            { name: "Conteo de arranques", category: "operativa", icon: "power-off" },
-            { name: "Entrada de petróleo", category: "fluidos", icon: "oil-can" },
-            { name: "Entrada de agua", category: "fluidos", icon: "tint" },
-            { name: "Entrada de gas", category: "fluidos", icon: "wind" },
-            { name: "Entrada de líquidos", category: "fluidos", icon: "water" },
-            { name: "Saturación de gas entrada", category: "fluidos", icon: "chart-line" },
-            { name: "Eficiencia separador gas", category: "operativa", icon: "percent" },
-            { name: "Gas por anillo entrada", category: "fluidos", icon: "wind" },
-            { name: "Gas por BES entrada", category: "fluidos", icon: "wind" },
-            { name: "Gas por anillo", category: "fluidos", icon: "wind" },
-            { name: "Gas por BES", category: "fluidos", icon: "wind" },
-            { name: "Pb BES", category: "operativa", icon: "chart-line" },
-            { name: "Presión de descarga", category: "hidráulica", icon: "tachometer-alt" },
-            { name: "Fluido BES", category: "fluidos", icon: "water" },
-            { name: "Saturación gas descarga", category: "fluidos", icon: "chart-line" },
-            { name: "Delta presión bomba", category: "hidráulica", icon: "tachometer-alt" },
-            { name: "Presión promedio bomba", category: "hidráulica", icon: "tachometer-alt" },
-            { name: "Saturación gas en bomba", category: "fluidos", icon: "chart-line" },
-            { name: "Potencia de la bomba", category: "eléctrica", icon: "bolt" },
-            { name: "Potencia del variador", category: "eléctrica", icon: "bolt" },
-            { name: "Relación de potencia", category: "eléctrica", icon: "chart-line" },
-            { name: "Diferencia de potencia", category: "eléctrica", icon: "chart-line" },
-            { name: "Temperatura BES", category: "térmica", icon: "thermometer-half" },
-            { name: "Límite inferior", category: "operativa", icon: "arrow-down" }
+            { name: "FALLA", category: "estado", icon: "exclamation-triangle" },
+            { name: "Petróleo", category: "producción", icon: "oil-can" },
+            { name: "Gas", category: "producción", icon: "wind" },
+            { name: "Agua", category: "producción", icon: "tint" },
+            { name: "Corriente del Drive", category: "eléctrica", icon: "bolt" },
+            { name: "Voltaje del Drive", category: "eléctrica", icon: "bolt" },
+            { name: "Presión de Entrada", category: "presión", icon: "tachometer-alt" },
+            { name: "Temp. Apagado Motor", category: "térmica", icon: "thermometer-half" },
+            { name: "Temp. Enrollado Motor", category: "térmica", icon: "thermometer-half" },
+            { name: "Frecuencia de Salida", category: "eléctrica", icon: "waveform" },
+            { name: "Vibración X", category: "mecánica", icon: "waveform" },
+            { name: "Cuenta de Inicio", category: "operativa", icon: "power-off" },
+            { name: "Entrada de Petróleo", category: "fluidos", icon: "oil-can" },
+            { name: "Entrada de Agua", category: "fluidos", icon: "tint" },
+            { name: "Entrada de Gas", category: "fluidos", icon: "wind" },
+            { name: "Entrada de Líquido", category: "fluidos", icon: "water" },
+            { name: "Saturación de Gas en Entrada", category: "fluidos", icon: "chart-line" },
+            { name: "Eficiencia Separador de Gas", category: "operativa", icon: "percent" },
+            { name: "Gas por el Anillo en Entrada", category: "fluidos", icon: "wind" },
+            { name: "Gas por ESP en Entrada", category: "fluidos", icon: "wind" },
+            { name: "Gas por el Anillo", category: "fluidos", icon: "wind" },
+            { name: "Gas por ESP", category: "fluidos", icon: "wind" },
+            { name: "Pb ESP", category: "operativa", icon: "chart-line" },
+            { name: "Presión de Descarga", category: "presión", icon: "tachometer-alt" },
+            { name: "Fluido ESP", category: "fluidos", icon: "water" },
+            { name: "Saturación de Gas en Descarga", category: "fluidos", icon: "chart-line" },
+            { name: "Delta de Presión Bomba", category: "presión", icon: "tachometer-alt" },
+            { name: "Presión Promedio Bomba", category: "presión", icon: "tachometer-alt" },
+            { name: "Saturación de Gas en Bomba", category: "fluidos", icon: "chart-line" },
+            { name: "Potencia de Bomba", category: "eléctrica", icon: "bolt" },
+            { name: "Potencia del Drive", category: "eléctrica", icon: "bolt" },
+            { name: "Relación de Potencia", category: "eléctrica", icon: "chart-line" },
+            { name: "Diferencia de Potencia", category: "eléctrica", icon: "chart-line" },
+            { name: "Temperatura ESP", category: "térmica", icon: "thermometer-half" },
+            { name: "Límite Inferior", category: "operativa", icon: "arrow-down" }
         ];
 
         // ============================================================
@@ -629,35 +592,7 @@
             });
         }
 
-        // ============================================================
-        // CONEXIÓN CON SUPABASE (Solo para verificar)
-        // ============================================================
-        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
-        
-        console.log('🔑 PredictiveBES - IA para BES');
-        console.log('📡 Conectado a Supabase:', SUPABASE_URL);
         console.log('📊 Variables cargadas:', variables.length);
-
-        // Verificar sesión (si el usuario ya está logueado, mostrar botón de acceso directo)
-        async function verificarSesion() {
-            try {
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session) {
-                    console.log('👤 Sesión activa:', session.user.email);
-                    // Cambiar el texto del botón "Acceder" por "Ir al Dashboard"
-                    const loginBtn = document.querySelector('.btn-login');
-                    if (loginBtn) {
-                        loginBtn.innerHTML = '<i class="fas fa-chart-line"></i> Dashboard';
-                        loginBtn.onclick = () => window.location.href = 'dashboard.html';
-                    }
-                }
-            } catch (e) {
-                console.log('👤 Usuario no autenticado');
-            }
-        }
-        verificarSesion();
     </script>
 
 </body>
