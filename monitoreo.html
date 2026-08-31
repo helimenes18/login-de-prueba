@@ -429,10 +429,18 @@
             } catch { window.location.href = 'login.html'; }
         }
 
-        document.getElementById('btnLogout').addEventListener('click', async function() {
-            await supabase.auth.signOut();
-            localStorage.removeItem('bes_user');
-            window.location.href = 'login.html';
+        document.getElementById('btnLogout').addEventListener('click', async function(e) {
+            e.preventDefault();
+            this.textContent = 'Saliendo...';
+            this.style.opacity = '0.7';
+            try {
+                await supabase.auth.signOut();
+            } catch (error) {
+                console.error('Error durante el cierre de sesión:', error);
+            } finally {
+                localStorage.removeItem('bes_user');
+                window.location.replace('login.html');
+            }
         });
 
         function actualizarMonitoreo() {
