@@ -573,13 +573,23 @@
 
             try {
                 // Intentamos cerrar la sesión en el servidor de Supabase
-                await supabaseClient.auth.signOut();
+                await Promise.race([
+                    supabaseClient.auth.signOut(),
+                    new Promise((resolve) => setTimeout(resolve, 2500))
+                ]);
             } catch (error) {
                 // Si el servidor falla, lo registramos pero continuamos cerrando localmente
                 console.error("Error durante el cierre en Supabase:", error);
             } finally {
                 // El bloque finally asegura que esto se ejecute SÍ o SÍ
-                localStorage.removeItem('bes_user');
+                // Limpieza forzada: borra la sesion real de Supabase
+                // ademas de la llave propia, por si signOut() fallo en el servidor
+                Object.keys(localStorage).forEach((key) => {
+                    if (key.startsWith('sb-') || key === 'bes_user') {
+                        localStorage.removeItem(key);
+                    }
+                });
+                sessionStorage.clear();
                 // replace() destruye el historial para que no puedan dar "Atrás" en el navegador
                 window.location.replace('login.html'); 
             }

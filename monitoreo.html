@@ -434,11 +434,21 @@
             this.textContent = 'Saliendo...';
             this.style.opacity = '0.7';
             try {
-                await supabase.auth.signOut();
+                await Promise.race([
+                    supabase.auth.signOut(),
+                    new Promise((resolve) => setTimeout(resolve, 2500))
+                ]);
             } catch (error) {
                 console.error('Error durante el cierre de sesión:', error);
             } finally {
-                localStorage.removeItem('bes_user');
+                // Limpieza forzada: borra la sesion real de Supabase
+                // ademas de la llave propia, por si signOut() fallo en el servidor
+                Object.keys(localStorage).forEach((key) => {
+                    if (key.startsWith('sb-') || key === 'bes_user') {
+                        localStorage.removeItem(key);
+                    }
+                });
+                sessionStorage.clear();
                 window.location.replace('login.html');
             }
         });
