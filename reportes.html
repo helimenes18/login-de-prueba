@@ -330,6 +330,22 @@
             }
         });
 
+        async function fetchJsonSafe(url, options = {}) {
+            const response = await fetch(url, options);
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${text.slice(0, 180) || 'respuesta no disponible'}`);
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch (parseError) {
+                const preview = text.replace(/\s+/g, ' ').trim().slice(0, 220);
+                throw new Error(`JSON inválido en ${url}. Respuesta recibida: ${preview || 'vacía'}`);
+            }
+        }
+
         // Cargar resumen
         async function cargarResumen() {
             const cont = document.getElementById('statsMini');
@@ -337,10 +353,8 @@
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000);
-                const resp = await fetch(`${ML_API_BASE}/api/v1/context/summary`, { signal: controller.signal });
+                const data = await fetchJsonSafe(`${ML_API_BASE}/api/v1/context/summary`, { signal: controller.signal });
                 clearTimeout(timeoutId);
-                if (!resp.ok) throw new Error('Error ' + resp.status);
-                const data = await resp.json();
                 const entries = Object.entries(data || {});
                 if (!entries.length) {
                     cont.innerHTML = '<div class="item" style="grid-column:1/-1;"><div class="lab">El backend no devolvió datos de resumen.</div></div>';
@@ -356,7 +370,7 @@
                 console.error('Error cargando resumen:', err);
                 const msg = (err.name === 'AbortError')
                     ? 'El servidor tardó demasiado en responder (puede estar dormido en Render).'
-                    : 'No se pudo cargar el resumen (' + err.message + ').';
+                    : 'No se pudo cargar el resumen. Detalle: ' + err.message;
                 cont.innerHTML = `<div class="item" style="grid-column:1/-1;"><div class="lab" style="color:#EF4444;">⚠️ ${msg}</div></div>`;
             }
         }
@@ -393,17 +407,16 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 60000);
                     
-                    const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=1000`, { 
-                        signal: controller.signal 
+                    const data = await fetchJsonSafe(`${ML_API_BASE}/api/v1/context/records?limit=1000`, {
+                        signal: controller.signal
                     });
                     clearTimeout(timeoutId);
                     
-                    console.log('📥 Respuesta del backend:', resp.status);
-                    
-                    if (!resp.ok) throw new Error('Error ' + resp.status);
-                    
-                    const data = await resp.json();
-                    const registros = data.data || [];
+                    const registros = Array.isArray(data?.data)
+                        ? data.data
+                        : Array.isArray(data)
+                            ? data
+                            : [];
                     
                     console.log('📊 Registros obtenidos:', registros.length);
 

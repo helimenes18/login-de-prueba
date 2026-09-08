@@ -289,6 +289,22 @@
 
         let registrosCache = [];
 
+        async function fetchJsonSafe(url, options = {}) {
+            const response = await fetch(url, options);
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${text.slice(0, 180) || 'respuesta no disponible'}`);
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch (parseError) {
+                const preview = text.replace(/\s+/g, ' ').trim().slice(0, 220);
+                throw new Error(`JSON inválido en ${url}. Respuesta recibida: ${preview || 'vacía'}`);
+            }
+        }
+
         function formatFecha(iso) {
             if (!iso) return '—';
             try {
@@ -334,22 +350,26 @@
                 const timeoutId = setTimeout(() => controller.abort(), 60000);
                 const params = new URLSearchParams({ limit: '100' });
                 if (category) params.set('category', category);
-                const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?${params.toString()}`, { signal: controller.signal });
+
+                const data = await fetchJsonSafe(`${ML_API_BASE}/api/v1/context/records?${params.toString()}`, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
-                if (!resp.ok) throw new Error('El servidor respondió con error ' + resp.status);
+                const rawRecords = Array.isArray(data?.data)
+                    ? data.data
+                    : Array.isArray(data)
+                        ? data
+                        : [];
 
-                const data = await resp.json();
-                registrosCache = data.data || [];
+                registrosCache = rawRecords;
                 poblarFiltroCategoria(registrosCache);
                 renderTabla(registrosCache);
-                footer.textContent = `Mostrando ${registrosCache.length} de ${data.total_records} registros · Última actualización: hace unos segundos`;
+                footer.textContent = `Mostrando ${registrosCache.length} de ${Number(data?.total_records ?? registrosCache.length)} registros · Última actualización: hace unos segundos`;
             } catch (err) {
                 console.error('Error cargando historial:', err);
                 errorBox.style.display = 'block';
                 errorBox.textContent = (err.name === 'AbortError')
                     ? '⏱️ El servidor tardó demasiado en responder (puede estar "dormido" en Render). Reintenta en unos segundos.'
-                    : '⚠️ No se pudo conectar con el backend (' + err.message + ').';
+                    : '⚠️ No se pudo cargar el historial desde el backend. Detalle: ' + err.message;
                 body.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">No se pudieron cargar los registros.</td></tr>';
                 footer.textContent = '';
             }
