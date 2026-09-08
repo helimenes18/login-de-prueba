@@ -265,29 +265,32 @@
                         </div>
                         <div class="form-group">
                             <label>Nueva contraseña</label>
-                            <input type="password" placeholder="••••••••">
+                            <input type="password" placeholder="Dejar en blanco para no cambiarla" id="inputPassword">
                         </div>
-                        <button class="btn-primary">💾 Actualizar perfil</button>
+                        <div class="form-group">
+                            <label>Confirmar nueva contraseña</label>
+                            <input type="password" placeholder="Repetir contraseña" id="inputPasswordConfirm">
+                        </div>
+                        <button class="btn-primary" id="btnActualizarPerfil">💾 Actualizar perfil</button>
+                        <div id="perfilMsg" style="margin-top:10px; font-size:0.8rem; display:none;"></div>
                     </div>
                 </div>
 
                 <div>
                     <div class="card" style="margin-bottom:16px;">
-                        <h3>🕐 Actividad reciente</h3>
-                        <div class="activity-item"><span>Inicio de sesión</span><span class="time">Hace 2 horas</span></div>
-                        <div class="activity-item"><span>Vista de dashboard</span><span class="time">Hace 4 horas</span></div>
-                        <div class="activity-item"><span>Exportación de reporte</span><span class="time">Ayer, 16:30</span></div>
-                        <div class="activity-item"><span>Cambio de configuración</span><span class="time">Ayer, 10:15</span></div>
-                        <div class="activity-item"><span>Alerta predictiva revisada</span><span class="time">Hace 2 días</span></div>
+                        <h3>🕐 Información de la cuenta</h3>
+                        <div class="activity-item"><span>Cuenta creada</span><span class="time" id="infoCreada">—</span></div>
+                        <div class="activity-item"><span>Último inicio de sesión</span><span class="time" id="infoUltimoLogin">—</span></div>
+                        <div class="activity-item"><span>Proveedor de acceso</span><span class="time" id="infoProveedor">—</span></div>
+                        <div class="activity-item"><span>ID de usuario</span><span class="time" id="infoUserId" style="font-size:0.65rem;">—</span></div>
                     </div>
                     <div class="card">
                         <h3>📊 Estadísticas de usuario</h3>
                         <div class="stats-mini">
-                            <div class="item"><div class="num">47</div><div class="lab">Inicios de sesión</div></div>
-                            <div class="item"><div class="num">12</div><div class="lab">Reportes generados</div></div>
-                            <div class="item"><div class="num" style="color:#22C55E;">98%</div><div class="lab">Disponibilidad</div></div>
-                            <div class="item"><div class="num" style="color:var(--accent);">7</div><div class="lab">Alertas atendidas</div></div>
+                            <div class="item"><div class="num" id="statReportes">—</div><div class="lab">Reportes generados</div></div>
+                            <div class="item"><div class="num" id="statRol">—</div><div class="lab">Rol</div></div>
                         </div>
+                        <p style="margin-top:10px; font-size:0.65rem; color:var(--text-secondary);">Estadísticas basadas en datos reales de tu cuenta y de tus reportes generados.</p>
                     </div>
                 </div>
             </div>
@@ -303,21 +306,114 @@
             document.getElementById('sidebar').classList.toggle('open');
         });
 
+        let sesionActual = null;
+
+        function formatFechaLarga(iso) {
+            if (!iso) return '—';
+            try {
+                return new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+            } catch { return iso; }
+        }
+
         async function verificarSesion() {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session) { window.location.href = 'login.html'; return; }
+                sesionActual = session;
                 const email = session.user.email;
-                const nombre = email.split('@')[0];
+                const metaNombre = session.user.user_metadata?.full_name;
+                const nombre = metaNombre || (email.split('@')[0]);
+                const nombreMostrado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+
                 document.getElementById('userEmail').textContent = email;
-                document.getElementById('userAvatar').textContent = nombre.charAt(0).toUpperCase();
-                document.getElementById('profileAvatar').textContent = nombre.charAt(0).toUpperCase();
-                document.getElementById('profileName').textContent = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+                document.getElementById('userAvatar').textContent = nombreMostrado.charAt(0).toUpperCase();
+                document.getElementById('profileAvatar').textContent = nombreMostrado.charAt(0).toUpperCase();
+                document.getElementById('profileName').textContent = nombreMostrado;
                 document.getElementById('profileEmail').textContent = email;
                 document.getElementById('inputEmail').value = email;
-                document.getElementById('inputName').value = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+                document.getElementById('inputName').value = nombreMostrado;
+
+                document.getElementById('infoCreada').textContent = formatFechaLarga(session.user.created_at);
+                document.getElementById('infoUltimoLogin').textContent = formatFechaLarga(session.user.last_sign_in_at);
+                document.getElementById('infoProveedor').textContent = (session.user.app_metadata?.provider || 'email');
+                document.getElementById('infoUserId').textContent = session.user.id;
+                document.getElementById('statRol').textContent = session.user.user_metadata?.role || 'operador';
+
+                cargarEstadisticas(session.user.id);
             } catch { window.location.href = 'login.html'; }
         }
+
+        // Cuenta cuántos reportes ha generado este usuario (tabla reportes_generados en Supabase).
+        // Si la tabla aún no existe en tu proyecto de Supabase, esto falla en silencio y muestra "—".
+        async function cargarEstadisticas(userId) {
+            const statReportes = document.getElementById('statReportes');
+            try {
+                const { count, error } = await supabase
+                    .from('reportes_generados')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('user_id', userId);
+                if (error) throw error;
+                statReportes.textContent = count ?? 0;
+            } catch (err) {
+                console.warn('No se pudo leer reportes_generados (¿existe la tabla en Supabase?):', err.message);
+                statReportes.textContent = '—';
+            }
+        }
+
+        document.getElementById('btnActualizarPerfil').addEventListener('click', async function() {
+            const msg = document.getElementById('perfilMsg');
+            const nuevoNombre = document.getElementById('inputName').value.trim();
+            const pass1 = document.getElementById('inputPassword').value;
+            const pass2 = document.getElementById('inputPasswordConfirm').value;
+
+            msg.style.display = 'block';
+            msg.style.color = 'var(--text-secondary)';
+
+            if (!nuevoNombre) {
+                msg.style.color = '#EF4444';
+                msg.textContent = '⚠️ El nombre no puede estar vacío.';
+                return;
+            }
+            if (pass1 || pass2) {
+                if (pass1.length < 6) {
+                    msg.style.color = '#EF4444';
+                    msg.textContent = '⚠️ La nueva contraseña debe tener al menos 6 caracteres.';
+                    return;
+                }
+                if (pass1 !== pass2) {
+                    msg.style.color = '#EF4444';
+                    msg.textContent = '⚠️ Las contraseñas no coinciden.';
+                    return;
+                }
+            }
+
+            const original = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '⏳ Guardando...';
+
+            try {
+                const payload = { data: { full_name: nuevoNombre } };
+                if (pass1) payload.password = pass1;
+
+                const { data, error } = await supabase.auth.updateUser(payload);
+                if (error) throw error;
+
+                msg.style.color = '#22C55E';
+                msg.textContent = '✅ Perfil actualizado correctamente.';
+                document.getElementById('inputPassword').value = '';
+                document.getElementById('inputPasswordConfirm').value = '';
+                document.getElementById('profileName').textContent = nuevoNombre;
+                document.getElementById('userAvatar').textContent = nuevoNombre.charAt(0).toUpperCase();
+                document.getElementById('profileAvatar').textContent = nuevoNombre.charAt(0).toUpperCase();
+            } catch (err) {
+                console.error('Error actualizando perfil:', err);
+                msg.style.color = '#EF4444';
+                msg.textContent = '❌ No se pudo actualizar el perfil: ' + err.message;
+            } finally {
+                this.disabled = false;
+                this.innerHTML = original;
+            }
+        });
 
         document.getElementById('btnLogout').addEventListener('click', async function(e) {
             e.preventDefault();

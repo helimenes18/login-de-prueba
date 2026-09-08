@@ -445,6 +445,28 @@
         </div>
     </div>
 
+    <!-- MODAL DE INFORMACIÓN DEL POZO -->
+    <div id="pozoModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:200; align-items:center; justify-content:center;">
+        <div style="background:var(--gradient-main); border:1px solid var(--border-color); border-radius:16px; padding:24px; width:320px; max-width:90vw; box-shadow:0 0 40px rgba(139,92,246,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 id="pozoModalTitulo" style="font-size:1.1rem;">🛢️ Pozo</h3>
+                <span id="pozoModalCerrar" style="cursor:pointer; color:var(--text-secondary); font-size:1.2rem;">✕</span>
+            </div>
+            <div id="pozoModalEstado" style="margin-bottom:12px; font-weight:600;"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:10px; text-align:center;">
+                    <div style="font-size:0.65rem; color:var(--text-secondary);">⛽ Petróleo</div>
+                    <div id="pozoModalPetroleo" style="font-size:1.05rem; font-weight:700;">—</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:10px; text-align:center;">
+                    <div style="font-size:0.65rem; color:var(--text-secondary);">💧 Gas</div>
+                    <div id="pozoModalGas" style="font-size:1.05rem; font-weight:700;">—</div>
+                </div>
+            </div>
+            <p style="margin-top:16px; font-size:0.7rem; color:var(--text-secondary);">💡 Datos de ejemplo. Para telemetría real por pozo se requiere una tabla "pozos" en Supabase.</p>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
@@ -487,10 +509,26 @@
             }
         });
 
+        const ESTADO_COLOR = { 'Operando':'#22C55E', 'Alerta':'#F59E0B', 'Falla':'#EF4444', 'Mantenimiento':'#8B5CF6', 'Parado':'#64748B' };
+        const ESTADO_EMOJI = { 'Operando':'🟢', 'Alerta':'🟡', 'Falla':'🔴', 'Mantenimiento':'🟣', 'Parado':'⏸' };
+
         function showPozo(pozo, estado, petroleo, gas) {
-            const emojis = { 'Operando':'🟢', 'Alerta':'🟡', 'Falla':'🔴', 'Mantenimiento':'🟣', 'Parado':'⏸' };
-            alert('📊 INFORMACIÓN DEL POZO\n━━━━━━━━━━━━━━━━━━━━━━━\n🛢️ Pozo: ' + pozo + '\n📌 Estado: ' + (emojis[estado]||'') + ' ' + estado + '\n━━━━━━━━━━━━━━━━━━━━━━━\n⛽ Petróleo: ' + petroleo + '\n💧 Gas: ' + gas + '\n━━━━━━━━━━━━━━━━━━━━━━━\n💡 Haz clic en el mapa para más detalles.');
+            document.getElementById('pozoModalTitulo').textContent = '🛢️ Pozo ' + pozo;
+            const estadoEl = document.getElementById('pozoModalEstado');
+            estadoEl.textContent = (ESTADO_EMOJI[estado] || '') + ' ' + estado;
+            estadoEl.style.color = ESTADO_COLOR[estado] || 'var(--text-primary)';
+            document.getElementById('pozoModalPetroleo').textContent = petroleo;
+            document.getElementById('pozoModalGas').textContent = gas;
+            document.getElementById('pozoModalOverlay').style.display = 'flex';
         }
+
+        function cerrarPozoModal() {
+            document.getElementById('pozoModalOverlay').style.display = 'none';
+        }
+        document.getElementById('pozoModalCerrar').addEventListener('click', cerrarPozoModal);
+        document.getElementById('pozoModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) cerrarPozoModal();
+        });
 
         function actualizarFecha() {
             const now = new Date();

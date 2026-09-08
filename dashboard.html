@@ -721,10 +721,29 @@
         // ============================================================
         // INICIALIZAR
         // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
+        // Usa el intervalo de actualización configurado en Configuración (tabla user_settings) si existe
+        async function obtenerIntervaloConfigurado() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) return 3000;
+                const { data, error } = await supabaseClient
+                    .from('user_settings')
+                    .select('monitor_interval_seconds')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+                if (error) throw error;
+                return data?.monitor_interval_seconds ? data.monitor_interval_seconds * 1000 : 3000;
+            } catch (err) {
+                console.warn('No se pudo leer el intervalo configurado, se usa el valor por defecto (3s):', err.message);
+                return 3000;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
             verificarSesion();
             actualizarVariables();
-            setInterval(actualizarVariables, 3000);
+            const intervalo = await obtenerIntervaloConfigurado();
+            setInterval(actualizarVariables, intervalo);
             actualizarRiesgoIA();
         });
     </script>

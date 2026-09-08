@@ -460,25 +460,75 @@
             }
         });
 
+        // Umbrales por defecto; se sobrescriben con los guardados en Configuración (tabla user_settings)
+        let umbrales = { pip_min: 100, pdp_max: 1500, pdt_max: 200, corriente_min: 2.0 };
+        let intervaloMonitoreo = 3000;
+        let intervalHandle = null;
+
+        async function cargarUmbrales() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const { data, error } = await supabase
+                    .from('user_settings')
+                    .select('pip_min, pdp_max, pdt_max, corriente_min, monitor_interval_seconds')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+                if (error) throw error;
+                if (data) {
+                    umbrales = { pip_min: data.pip_min, pdp_max: data.pdp_max, pdt_max: data.pdt_max, corriente_min: data.corriente_min };
+                    if (data.monitor_interval_seconds) {
+                        intervaloMonitoreo = data.monitor_interval_seconds * 1000;
+                        if (intervalHandle) clearInterval(intervalHandle);
+                        intervalHandle = setInterval(actualizarMonitoreo, intervaloMonitoreo);
+                    }
+                }
+            } catch (err) {
+                console.warn('No se pudieron cargar los umbrales (¿existe "user_settings" en Supabase?):', err.message);
+            }
+        }
+
+        function marcarEstado(id, valor, { min, max } = {}) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.remove('normal', 'warning', 'danger');
+            if ((min !== undefined && valor < min) || (max !== undefined && valor > max)) {
+                el.classList.add('danger');
+            } else {
+                el.classList.add('normal');
+            }
+        }
+
         function actualizarMonitoreo() {
-            const ids = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10'];
-            const valores = [
-                (Math.random()*2+2.5).toFixed(2)+' A',
-                (Math.random()*10+115).toFixed(1)+' V',
-                (Math.random()*100+350).toFixed(0)+' psi',
-                (Math.random()*50+190).toFixed(0)+' psi',
-                (Math.random()*50+170).toFixed(0)+' psi',
-                (Math.random()*40+100).toFixed(0)+' psi',
-                (Math.random()*200+1300).toFixed(0)+' psi',
-                (Math.random()*20+170).toFixed(0)+' °F',
-                (Math.random()*30+95).toFixed(0)+' °F',
-                (Math.random()*1.5+0.5).toFixed(2)+' G'
-            ];
-            ids.forEach((id, i) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = valores[i];
-            });
-            document.getElementById('ultimaLectura').textContent = 'hace 3s';
+            const corriente = +(Math.random()*2+2.5).toFixed(2);
+            const voltaje = +(Math.random()*10+115).toFixed(1);
+            const chp = +(Math.random()*100+350).toFixed(0);
+            const thp = +(Math.random()*50+190).toFixed(0);
+            const plp = +(Math.random()*50+170).toFixed(0);
+            const pip = +(Math.random()*40+100).toFixed(0);
+            const pdp = +(Math.random()*200+1300).toFixed(0);
+            const pdt = +(Math.random()*20+170).toFixed(0);
+            const tlp = +(Math.random()*30+95).toFixed(0);
+            const vib = +(Math.random()*1.5+0.5).toFixed(2);
+
+            document.getElementById('m1').textContent = corriente + ' A';
+            document.getElementById('m2').textContent = voltaje + ' V';
+            document.getElementById('m3').textContent = chp + ' psi';
+            document.getElementById('m4').textContent = thp + ' psi';
+            document.getElementById('m5').textContent = plp + ' psi';
+            document.getElementById('m6').textContent = pip + ' psi';
+            document.getElementById('m7').textContent = pdp + ' psi';
+            document.getElementById('m8').textContent = pdt + ' °F';
+            document.getElementById('m9').textContent = tlp + ' °F';
+            document.getElementById('m10').textContent = vib + ' G';
+
+            // Aplica los umbrales configurados en Configuración para marcar valores fuera de rango
+            marcarEstado('m1', corriente, { min: umbrales.corriente_min });
+            marcarEstado('m6', pip, { min: umbrales.pip_min });
+            marcarEstado('m7', pdp, { max: umbrales.pdp_max });
+            marcarEstado('m8', pdt, { max: umbrales.pdt_max });
+
+            document.getElementById('ultimaLectura').textContent = 'hace unos segundos';
         }
 
         // ================= Análisis con IA (backend real) =================
@@ -555,10 +605,11 @@
 
         document.getElementById('btnAnalizarIA').addEventListener('click', analizarConIA);
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             verificarSesion();
+            await cargarUmbrales();
             actualizarMonitoreo();
-            setInterval(actualizarMonitoreo, 3000);
+            if (!intervalHandle) intervalHandle = setInterval(actualizarMonitoreo, intervaloMonitoreo);
         });
     </script>
 </body>

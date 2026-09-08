@@ -244,21 +244,22 @@
                     <h3>📊 Umbrales de variables</h3>
                     <div class="form-group">
                         <label>Presión mínima (PIP)</label>
-                        <input type="number" value="100" step="5"> psi
+                        <input type="number" value="100" step="5" id="inputPipMin"> psi
                     </div>
                     <div class="form-group">
                         <label>Presión máxima (PDP)</label>
-                        <input type="number" value="1500" step="10"> psi
+                        <input type="number" value="1500" step="10" id="inputPdpMax"> psi
                     </div>
                     <div class="form-group">
                         <label>Temperatura máxima (PDT)</label>
-                        <input type="number" value="200" step="5"> °F
+                        <input type="number" value="200" step="5" id="inputPdtMax"> °F
                     </div>
                     <div class="form-group">
                         <label>Corriente mínima</label>
-                        <input type="number" value="2.0" step="0.1"> A
+                        <input type="number" value="2.0" step="0.1" id="inputCorrienteMin"> A
                     </div>
-                    <button class="btn-primary">💾 Guardar umbrales</button>
+                    <button class="btn-primary" id="btnGuardarUmbrales">💾 Guardar umbrales</button>
+                    <div class="config-msg" id="umbralesMsg" style="margin-top:8px; font-size:0.75rem; display:none;"></div>
                 </div>
 
                 <div>
@@ -266,30 +267,31 @@
                         <h3>🔔 Notificaciones</h3>
                         <div class="toggle-row">
                             <div class="info">Alertas por email <div class="desc">Recibir notificaciones vía correo</div></div>
-                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="thumb"></div></div>
+                            <div class="toggle-switch active" id="toggleEmail" onclick="this.classList.toggle('active')"><div class="thumb"></div></div>
                         </div>
                         <div class="toggle-row">
                             <div class="info">Alertas en dashboard <div class="desc">Mostrar notificaciones en tiempo real</div></div>
-                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"><div class="thumb"></div></div>
+                            <div class="toggle-switch active" id="toggleDashboard" onclick="this.classList.toggle('active')"><div class="thumb"></div></div>
                         </div>
                         <div class="toggle-row">
                             <div class="info">Reportes automáticos <div class="desc">Enviar reportes semanales</div></div>
-                            <div class="toggle-switch" onclick="this.classList.toggle('active')"><div class="thumb"></div></div>
+                            <div class="toggle-switch" id="toggleAutoReportes" onclick="this.classList.toggle('active')"><div class="thumb"></div></div>
                         </div>
                     </div>
                     <div class="card">
                         <h3>📡 Frecuencia de monitoreo</h3>
                         <div class="form-group">
                             <label>Intervalo de actualización</label>
-                            <select>
-                                <option>1 segundo</option>
-                                <option selected>3 segundos</option>
-                                <option>5 segundos</option>
-                                <option>10 segundos</option>
-                                <option>30 segundos</option>
+                            <select id="selectIntervalo">
+                                <option value="1">1 segundo</option>
+                                <option value="3" selected>3 segundos</option>
+                                <option value="5">5 segundos</option>
+                                <option value="10">10 segundos</option>
+                                <option value="30">30 segundos</option>
                             </select>
                         </div>
-                        <button class="btn-primary">💾 Guardar configuración</button>
+                        <button class="btn-primary" id="btnGuardarConfig">💾 Guardar configuración</button>
+                        <div class="config-msg" id="configMsg" style="margin-top:8px; font-size:0.75rem; display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -304,15 +306,6 @@
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('open');
         });
-
-        async function verificarSesion() {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) { window.location.href = 'login.html'; return; }
-                document.getElementById('userEmail').textContent = session.user.email;
-                document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
-            } catch { window.location.href = 'login.html'; }
-        }
 
         document.getElementById('btnLogout').addEventListener('click', async function(e) {
             e.preventDefault();
@@ -338,7 +331,90 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', verificarSesion);
+        // ================================================================
+        // CONFIGURACIÓN REAL (tabla user_settings en Supabase)
+        // ================================================================
+        let usuarioId = null;
+
+        function leerFormulario() {
+            return {
+                pip_min: parseFloat(document.getElementById('inputPipMin').value) || 0,
+                pdp_max: parseFloat(document.getElementById('inputPdpMax').value) || 0,
+                pdt_max: parseFloat(document.getElementById('inputPdtMax').value) || 0,
+                corriente_min: parseFloat(document.getElementById('inputCorrienteMin').value) || 0,
+                email_alerts: document.getElementById('toggleEmail').classList.contains('active'),
+                dashboard_alerts: document.getElementById('toggleDashboard').classList.contains('active'),
+                auto_reports: document.getElementById('toggleAutoReportes').classList.contains('active'),
+                monitor_interval_seconds: parseInt(document.getElementById('selectIntervalo').value, 10)
+            };
+        }
+
+        function aplicarFormulario(cfg) {
+            if (!cfg) return;
+            document.getElementById('inputPipMin').value = cfg.pip_min;
+            document.getElementById('inputPdpMax').value = cfg.pdp_max;
+            document.getElementById('inputPdtMax').value = cfg.pdt_max;
+            document.getElementById('inputCorrienteMin').value = cfg.corriente_min;
+            document.getElementById('toggleEmail').classList.toggle('active', !!cfg.email_alerts);
+            document.getElementById('toggleDashboard').classList.toggle('active', !!cfg.dashboard_alerts);
+            document.getElementById('toggleAutoReportes').classList.toggle('active', !!cfg.auto_reports);
+            document.getElementById('selectIntervalo').value = String(cfg.monitor_interval_seconds || 3);
+        }
+
+        async function cargarConfiguracion() {
+            try {
+                const { data, error } = await supabase
+                    .from('user_settings')
+                    .select('*')
+                    .eq('user_id', usuarioId)
+                    .maybeSingle();
+                if (error) throw error;
+                if (data) aplicarFormulario(data);
+            } catch (err) {
+                console.warn('No se pudo cargar user_settings (¿existe la tabla en Supabase?):', err.message);
+            }
+        }
+
+        async function guardarConfiguracion(msgElId, btn) {
+            const msg = document.getElementById(msgElId);
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Guardando...';
+            msg.style.display = 'block';
+
+            try {
+                const payload = { user_id: usuarioId, ...leerFormulario(), updated_at: new Date().toISOString() };
+                const { error } = await supabase
+                    .from('user_settings')
+                    .upsert(payload, { onConflict: 'user_id' });
+                if (error) throw error;
+                msg.style.color = '#22C55E';
+                msg.textContent = '✅ Configuración guardada. Los umbrales se aplicarán en Monitoreo y Dashboard.';
+            } catch (err) {
+                console.error('Error guardando configuración:', err);
+                msg.style.color = '#EF4444';
+                msg.textContent = '❌ No se pudo guardar (¿existe la tabla "user_settings" en Supabase?): ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        }
+
+        document.getElementById('btnGuardarUmbrales').addEventListener('click', function() {
+            guardarConfiguracion('umbralesMsg', this);
+        });
+        document.getElementById('btnGuardarConfig').addEventListener('click', function() {
+            guardarConfiguracion('configMsg', this);
+        });
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+            usuarioId = session.user.id;
+            document.getElementById('userEmail').textContent = session.user.email;
+            document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
+            cargarConfiguracion();
+        });
     </script>
 </body>
 </html>

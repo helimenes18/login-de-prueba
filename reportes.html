@@ -276,10 +276,10 @@
                     </div>
                     <div class="card">
                         <h3>📋 Reportes generados</h3>
-                        <div class="report-item"><span>Reporte_operativo_2025-06.pdf</span><span class="dl">📥</span></div>
-                        <div class="report-item"><span>Fallas_BES-01_2025-06.xlsx</span><span class="dl">📥</span></div>
-                        <div class="report-item"><span>Predictivo_junio_2025.csv</span><span class="dl">📥</span></div>
-                        <p style="margin-top:8px; font-size:0.65rem; color:var(--text-secondary);">Esta lista es de ejemplo; el backend aún no expone un historial de reportes generados.</p>
+                        <div id="listaReportes">
+                            <p style="font-size:0.75rem; color:var(--text-secondary);">⏳ Cargando historial...</p>
+                        </div>
+                        <p style="margin-top:8px; font-size:0.65rem; color:var(--text-secondary);">Historial real de tu cuenta. El archivo ya se descargó a tu equipo al generarlo; aquí solo se guarda el registro.</p>
                     </div>
                 </div>
             </div>
@@ -466,6 +466,15 @@
                     
                     console.log('✅ Reporte generado y descargado:', filename);
 
+                    registrarReporteGenerado({
+                        tipo: tipoReporte,
+                        formato,
+                        fechaInicio,
+                        fechaFin,
+                        totalRegistros: registros.length,
+                        filename
+                    });
+
                 } catch (err) {
                     console.error('❌ Error generando el reporte:', err);
                     let mensaje = err.message;
@@ -483,11 +492,64 @@
         // Botón para recargar resumen
         document.getElementById('btnRecargarResumen').addEventListener('click', cargarResumen);
 
+        // ================================================================
+        // HISTORIAL REAL DE REPORTES (tabla reportes_generados en Supabase)
+        // ================================================================
+        async function registrarReporteGenerado({ tipo, formato, fechaInicio, fechaFin, totalRegistros, filename }) {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const { error } = await supabase.from('reportes_generados').insert({
+                    user_id: session.user.id,
+                    tipo, formato,
+                    fecha_inicio: fechaInicio || null,
+                    fecha_fin: fechaFin || null,
+                    total_registros: totalRegistros,
+                    filename
+                });
+                if (error) throw error;
+            } catch (err) {
+                console.warn('No se pudo registrar el reporte (¿existe "reportes_generados" en Supabase?):', err.message);
+            } finally {
+                cargarHistorialReportes();
+            }
+        }
+
+        async function cargarHistorialReportes() {
+            const cont = document.getElementById('listaReportes');
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                const { data, error } = await supabase
+                    .from('reportes_generados')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                if (error) throw error;
+
+                if (!data || !data.length) {
+                    cont.innerHTML = '<p style="font-size:0.75rem; color:var(--text-secondary);">Aún no has generado ningún reporte.</p>';
+                    return;
+                }
+                cont.innerHTML = data.map(r => `
+                    <div class="report-item">
+                        <span>${r.filename}</span>
+                        <span style="color:var(--text-secondary); font-size:0.7rem;">${new Date(r.created_at).toLocaleDateString('es-MX')}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.warn('No se pudo cargar el historial de reportes (¿existe "reportes_generados" en Supabase?):', err.message);
+                cont.innerHTML = '<p style="font-size:0.7rem; color:var(--text-secondary);">No se pudo cargar el historial (la tabla "reportes_generados" aún no existe en Supabase).</p>';
+            }
+        }
+
         // Inicialización cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
             console.log('📄 Página de Reportes cargada');
             verificarSesion();
             cargarResumen();
+            cargarHistorialReportes();
             
             // Configurar el botón de generar reporte
             configurarBotonGenerar();
