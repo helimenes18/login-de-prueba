@@ -292,10 +292,12 @@
         const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Función para el toggle del sidebar
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             document.getElementById('sidebar').classList.toggle('open');
         });
 
+        // Verificar sesión
         async function verificarSesion() {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
@@ -305,6 +307,7 @@
             } catch { window.location.href = 'login.html'; }
         }
 
+        // Cerrar sesión
         document.getElementById('btnLogout').addEventListener('click', async function(e) {
             e.preventDefault();
             this.textContent = 'Saliendo...';
@@ -327,6 +330,7 @@
             }
         });
 
+        // Cargar resumen
         async function cargarResumen() {
             const cont = document.getElementById('statsMini');
             cont.innerHTML = '<div class="item" style="grid-column:1/-1;"><div class="lab">⏳ Cargando resumen desde el backend...</div></div>';
@@ -358,94 +362,122 @@
         }
 
         // ================================================================
-        // ✅ BOTÓN GENERAR REPORTE - CORREGIDO
+        // ✅ BOTÓN GENERAR REPORTE - CORREGIDO CON MÚLTIPLES VERIFICACIONES
         // ================================================================
-        document.getElementById('btnGenerarReporte').addEventListener('click', async function() {
-            const btn = this;
-            const original = btn.innerHTML;
-            const tipoReporte = document.getElementById('selectTipoReporte').value;
-            const formato = document.getElementById('selectFormato').value;
-            const fechaInicio = document.getElementById('fechaInicio').value;
-            const fechaFin = document.getElementById('fechaFin').value;
+        function configurarBotonGenerar() {
+            const btn = document.getElementById('btnGenerarReporte');
             
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Generando...';
-
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000);
-                
-                // Obtener los registros del backend
-                const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=1000`, { 
-                    signal: controller.signal 
-                });
-                clearTimeout(timeoutId);
-                
-                if (!resp.ok) throw new Error('Error ' + resp.status);
-                
-                const data = await resp.json();
-                const registros = data.data || [];
-
-                if (registros.length === 0) {
-                    alert('⚠️ No hay registros disponibles para exportar.');
-                    btn.disabled = false;
-                    btn.innerHTML = original;
-                    return;
-                }
-
-                // Crear el contenido del reporte según el formato
-                let blob, filename;
-                const timestamp = new Date().toISOString().slice(0, 10);
-                const tipoSlug = tipoReporte.replace(/\s/g, '_').toLowerCase();
-
-                if (formato === 'CSV') {
-                    // Cabecera del CSV
-                    const header = 'record_id,category,value,timestamp\n';
-                    const rows = registros.map(r => 
-                        `${r.record_id || 'N/A'},${r.category || 'N/A'},${r.value || 'N/A'},${r.timestamp || 'N/A'}`
-                    ).join('\n');
-                    blob = new Blob([header + rows], { type: 'text/csv' });
-                    filename = `reporte_${tipoSlug}_${timestamp}.csv`;
-                } else {
-                    // Formato JSON (más detallado)
-                    const reporte = {
-                        tipo: tipoReporte,
-                        fecha_generacion: new Date().toISOString(),
-                        periodo: {
-                            inicio: fechaInicio,
-                            fin: fechaFin
-                        },
-                        total_registros: registros.length,
-                        datos: registros
-                    };
-                    blob = new Blob([JSON.stringify(reporte, null, 2)], { type: 'application/json' });
-                    filename = `reporte_${tipoSlug}_${timestamp}.json`;
-                }
-
-                // Descargar el archivo
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-
-            } catch (err) {
-                console.error('Error generando el reporte:', err);
-                alert('No se pudo generar el reporte: ' + err.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = original;
+            if (!btn) {
+                console.error('❌ Botón "btnGenerarReporte" no encontrado en el DOM');
+                return;
             }
-        });
 
+            console.log('✅ Botón "btnGenerarReporte" encontrado, asignando evento...');
+
+            btn.addEventListener('click', async function(event) {
+                event.preventDefault();
+                console.log('🔄 Click detectado en el botón de generar reporte');
+                
+                const original = this.innerHTML;
+                const tipoReporte = document.getElementById('selectTipoReporte').value;
+                const formato = document.getElementById('selectFormato').value;
+                const fechaInicio = document.getElementById('fechaInicio').value;
+                const fechaFin = document.getElementById('fechaFin').value;
+                
+                this.disabled = true;
+                this.innerHTML = '⏳ Generando...';
+
+                try {
+                    console.log('📡 Consultando al backend:', `${ML_API_BASE}/api/v1/context/records`);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 60000);
+                    
+                    const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=1000`, { 
+                        signal: controller.signal 
+                    });
+                    clearTimeout(timeoutId);
+                    
+                    console.log('📥 Respuesta del backend:', resp.status);
+                    
+                    if (!resp.ok) throw new Error('Error ' + resp.status);
+                    
+                    const data = await resp.json();
+                    const registros = data.data || [];
+                    
+                    console.log('📊 Registros obtenidos:', registros.length);
+
+                    if (registros.length === 0) {
+                        alert('⚠️ No hay registros disponibles para exportar.');
+                        this.disabled = false;
+                        this.innerHTML = original;
+                        return;
+                    }
+
+                    // Crear el contenido del reporte
+                    let blob, filename;
+                    const timestamp = new Date().toISOString().slice(0, 10);
+                    const tipoSlug = tipoReporte.replace(/\s/g, '_').toLowerCase();
+
+                    if (formato === 'CSV') {
+                        const header = 'record_id,category,value,timestamp\n';
+                        const rows = registros.map(r => 
+                            `${r.record_id || 'N/A'},${r.category || 'N/A'},${r.value || 'N/A'},${r.timestamp || 'N/A'}`
+                        ).join('\n');
+                        blob = new Blob([header + rows], { type: 'text/csv' });
+                        filename = `reporte_${tipoSlug}_${timestamp}.csv`;
+                    } else {
+                        const reporte = {
+                            tipo: tipoReporte,
+                            fecha_generacion: new Date().toISOString(),
+                            periodo: {
+                                inicio: fechaInicio,
+                                fin: fechaFin
+                            },
+                            total_registros: registros.length,
+                            datos: registros
+                        };
+                        blob = new Blob([JSON.stringify(reporte, null, 2)], { type: 'application/json' });
+                        filename = `reporte_${tipoSlug}_${timestamp}.json`;
+                    }
+
+                    // Descargar el archivo
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                    
+                    console.log('✅ Reporte generado y descargado:', filename);
+
+                } catch (err) {
+                    console.error('❌ Error generando el reporte:', err);
+                    let mensaje = err.message;
+                    if (err.name === 'AbortError') {
+                        mensaje = 'El servidor tardó demasiado en responder. Intenta nuevamente.';
+                    }
+                    alert('❌ No se pudo generar el reporte: ' + mensaje);
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = original;
+                }
+            });
+        }
+
+        // Botón para recargar resumen
         document.getElementById('btnRecargarResumen').addEventListener('click', cargarResumen);
 
+        // Inicialización cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Página de Reportes cargada');
             verificarSesion();
             cargarResumen();
+            
+            // Configurar el botón de generar reporte
+            configurarBotonGenerar();
         });
     </script>
 </body>
