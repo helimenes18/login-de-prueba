@@ -15,6 +15,7 @@
             --text-primary: #E2E8F0;
             --text-secondary: #94A3B8;
             --accent: #8B5CF6;
+            --accent-hover: #7C3AED;
             --border-color: rgba(139, 92, 246, 0.2);
             --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
             --card-bg: rgba(30, 27, 75, 0.5);
@@ -147,6 +148,11 @@
             background: var(--accent-hover);
             box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
         }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .stats-mini {
             display: grid;
@@ -244,21 +250,21 @@
                     </div>
                     <div class="form-group">
                         <label>Fecha de inicio</label>
-                        <input type="date" value="2025-06-01">
+                        <input type="date" id="fechaInicio" value="2025-06-01">
                     </div>
                     <div class="form-group">
                         <label>Fecha de fin</label>
-                        <input type="date" value="2025-06-30">
+                        <input type="date" id="fechaFin" value="2025-06-30">
                     </div>
                     <div class="form-group">
                         <label>Formato</label>
                         <select id="selectFormato">
-                            <option>CSV</option>
-                            <option>JSON</option>
+                            <option value="CSV">CSV</option>
+                            <option value="JSON">JSON</option>
                         </select>
                     </div>
                     <button class="btn-primary" id="btnGenerarReporte"><i class="fas fa-download"></i> Generar y descargar</button>
-                    <p style="margin-top:8px; font-size:0.7rem; color:var(--text-secondary);">Exporta los registros reales disponibles en el backend (las fechas aún no filtran del lado del servidor).</p>
+                    <p style="margin-top:8px; font-size:0.7rem; color:var(--text-secondary);">Exporta los registros reales disponibles en el backend.</p>
                 </div>
 
                 <div>
@@ -351,34 +357,72 @@
             }
         }
 
-        document.getElementById('btnRecargarResumen').addEventListener('click', cargarResumen);
-
+        // ================================================================
+        // ✅ BOTÓN GENERAR REPORTE - CORREGIDO
+        // ================================================================
         document.getElementById('btnGenerarReporte').addEventListener('click', async function() {
             const btn = this;
             const original = btn.innerHTML;
+            const tipoReporte = document.getElementById('selectTipoReporte').value;
+            const formato = document.getElementById('selectFormato').value;
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+            
             btn.disabled = true;
             btn.innerHTML = '⏳ Generando...';
+
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 60000);
-                const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=1000`, { signal: controller.signal });
+                
+                // Obtener los registros del backend
+                const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=1000`, { 
+                    signal: controller.signal 
+                });
                 clearTimeout(timeoutId);
+                
                 if (!resp.ok) throw new Error('Error ' + resp.status);
+                
                 const data = await resp.json();
                 const registros = data.data || [];
-                const formato = document.getElementById('selectFormato').value;
 
-                let blob, filename;
-                if (formato === 'CSV') {
-                    const header = 'record_id,category,value,timestamp\n';
-                    const rows = registros.map(r => `${r.record_id},${r.category},${r.value},${r.timestamp || ''}`).join('\n');
-                    blob = new Blob([header + rows], { type: 'text/csv' });
-                    filename = 'reporte_predictivebes.csv';
-                } else {
-                    blob = new Blob([JSON.stringify(registros, null, 2)], { type: 'application/json' });
-                    filename = 'reporte_predictivebes.json';
+                if (registros.length === 0) {
+                    alert('⚠️ No hay registros disponibles para exportar.');
+                    btn.disabled = false;
+                    btn.innerHTML = original;
+                    return;
                 }
 
+                // Crear el contenido del reporte según el formato
+                let blob, filename;
+                const timestamp = new Date().toISOString().slice(0, 10);
+                const tipoSlug = tipoReporte.replace(/\s/g, '_').toLowerCase();
+
+                if (formato === 'CSV') {
+                    // Cabecera del CSV
+                    const header = 'record_id,category,value,timestamp\n';
+                    const rows = registros.map(r => 
+                        `${r.record_id || 'N/A'},${r.category || 'N/A'},${r.value || 'N/A'},${r.timestamp || 'N/A'}`
+                    ).join('\n');
+                    blob = new Blob([header + rows], { type: 'text/csv' });
+                    filename = `reporte_${tipoSlug}_${timestamp}.csv`;
+                } else {
+                    // Formato JSON (más detallado)
+                    const reporte = {
+                        tipo: tipoReporte,
+                        fecha_generacion: new Date().toISOString(),
+                        periodo: {
+                            inicio: fechaInicio,
+                            fin: fechaFin
+                        },
+                        total_registros: registros.length,
+                        datos: registros
+                    };
+                    blob = new Blob([JSON.stringify(reporte, null, 2)], { type: 'application/json' });
+                    filename = `reporte_${tipoSlug}_${timestamp}.json`;
+                }
+
+                // Descargar el archivo
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -387,6 +431,7 @@
                 a.click();
                 a.remove();
                 URL.revokeObjectURL(url);
+
             } catch (err) {
                 console.error('Error generando el reporte:', err);
                 alert('No se pudo generar el reporte: ' + err.message);
@@ -395,6 +440,8 @@
                 btn.innerHTML = original;
             }
         });
+
+        document.getElementById('btnRecargarResumen').addEventListener('click', cargarResumen);
 
         document.addEventListener('DOMContentLoaded', function() {
             verificarSesion();
