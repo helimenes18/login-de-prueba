@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ============================================================
+           ROOT - Variables (Estilo combinado)
+           ============================================================ */
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(30, 27, 75, 0.6);
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --accent: #8B5CF6;
+            --accent-hover: #7C3AED;
+            --border-color: rgba(139, 92, 246, 0.2);
+            --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
+            --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
+            --card-bg: rgba(30, 27, 75, 0.5);
+            --sidebar-bg: rgba(0, 0, 0, 0.6);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ============================================================
+           SCROLLBAR
+           ============================================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 30px; }
+
+        /* ============================================================
+           SIDEBAR
+           ============================================================ */
+        .sidebar {
+            width: 220px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            margin-bottom: 32px;
+        }
+        .sidebar .logo .icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+        }
+        .sidebar .logo h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .sidebar .logo h2 span { color: var(--accent); }
+        .sidebar .logo .badge {
+            font-size: 0.5rem;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+        }
+        .sidebar .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        .sidebar .nav-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--text-primary);
+        }
+        .sidebar .nav-item.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent);
+            border: 1px solid var(--border-color);
+        }
+        .sidebar .nav-item i { width: 20px; }
+        .sidebar .nav-divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 12px 0;
+        }
+        .sidebar .nav-footer {
+            margin-top: auto;
+            padding: 12px 14px;
+            color: var(--text-secondary);
+            font-size: 0.65rem;
+            opacity: 0.5;
+        }
+
+        /* ============================================================
+           MAIN CONTENT
+           ============================================================ */
+        .main-content {
+            margin-left: 220px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ============================================================
+           NAVBAR SUPERIOR
+           ============================================================ */
+        .navbar-top {
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .navbar-top .left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .navbar-top .left h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .navbar-top .left .breadcrumb {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        .navbar-top .right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .navbar-top .right .user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .navbar-top .right .user .avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        .navbar-top .right .btn-logout {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #EF4444;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .navbar-top .right .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        /* ============================================================
+           CONTENIDO
+           ============================================================ */
+        .content {
+            padding: 28px 32px;
+            flex: 1;
+        }
+
+        /* ============================================================
+           STATS CARDS
+           ============================================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        .stat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+        .stat-card .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 4px 0;
+        }
+        .stat-card .change {
+            font-size: 0.7rem;
+            padding: 2px 10px;
+            border-radius: 30px;
+            display: inline-block;
+        }
+        .stat-card .change.up { background: rgba(34, 197, 94, 0.2); color: #22C55E; }
+        .stat-card .change.down { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+        .stat-card .icon { float: right; font-size: 1.3rem; color: var(--accent); }
+
+        /* ============================================================
+           VARIABLES SECTION
+           ============================================================ */
+        .vars-section {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 28px;
+        }
+        .vars-section .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .vars-section .header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .vars-section .header .live {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: #22C55E;
+            font-weight: 600;
+        }
+        .vars-section .header .live .dot {
+            width: 8px;
+            height: 8px;
+            background: #22C55E;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+        .vars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+        }
+        .var-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .var-item .name {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .var-item .value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-family: monospace;
+        }
+        .var-item .value.normal { color: #22C55E; }
+        .var-item .value.warning { color: #F59E0B; }
+        .var-item .value.danger { color: #EF4444; }
+
+        /* ============================================================
+           WELCOME BOX
+           ============================================================ */
+        .welcome-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(30, 27, 75, 0.3));
+            border-radius: 16px;
+            padding: 24px 28px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .welcome-box h3 { font-size: 1rem; }
+        .welcome-box p { color: var(--text-secondary); font-size: 0.85rem; }
+        .welcome-box .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.1);
+            padding: 6px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .welcome-box .status .dot {
+            width: 8px;
+            height: 8px;
+            background: #22C55E;
+            border-radius: 50%;
+        }
+        .welcome-box .status span { font-size: 0.8rem; color: #22C55E; }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 260px;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: block; }
+            .navbar-top { padding: 12px 16px; flex-wrap: wrap; }
+            .content { padding: 16px; }
+            .vars-grid { grid-template-columns: 1fr 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .vars-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .navbar-top .right .user span { display: none; }
+            .welcome-box { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    SIDEBAR
+    ============================================================ -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo">
+            <div class="icon">🔬</div>
+            <h2>Predictive<span>BES</span></h2>
+            <span class="badge">v1.0</span>
+        </div>
+
+        <a href="dashboard.html" class="nav-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="monitoreo.html" class="nav-item"><i class="fas fa-chart-line"></i> Monitoreo</a>
+        <a href="mapa.html" class="nav-item"><i class="fas fa-map-marked-alt"></i> Mapa</a>
+        <a href="predictivo.html" class="nav-item"><i class="fas fa-brain"></i> Predictivo</a>
+        <a href="historial.html" class="nav-item"><i class="fas fa-history"></i> Historial</a>
+        <a href="reportes.html" class="nav-item"><i class="fas fa-file-alt"></i> Reportes</a>
+
+        <hr class="nav-divider">
+
+        <a href="configuracion.html" class="nav-item"><i class="fas fa-cog"></i> Configuración</a>
+        <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i> Perfil</a>
+
+        <hr class="nav-divider">
+
+        <div class="nav-footer">
+            <p>© 2026 PredictiveBES</p>
+            <p style="font-size:0.55rem; opacity:0.6;">BES Analytics · IA</p>
+        </div>
+    </nav>
+
+    <!-- ============================================================
+    MAIN CONTENT
+    ============================================================ -->
+    <div class="main-content">
+
+        <!-- ===== NAVBAR ===== -->
+        <header class="navbar-top">
+            <div class="left">
+                <button type="button" class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <h1>Dashboard</h1>
+                <span class="breadcrumb">/ Resumen del sistema</span>
+            </div>
+            <div class="right">
+                <div class="user">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <span id="userEmail">Cargando...</span>
+                </div>
+                <button type="button" class="btn-logout" id="btnLogout">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <!-- ===== CONTENIDO ===== -->
+        <div class="content">
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="icon"><i class="fas fa-database"></i></span>
+                    <div class="label">Variables monitoreadas</div>
+                    <div class="value">2</div>
+                    <span class="change up">↑ Activas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="icon"><i class="fas fa-check-circle"></i></span>
+                    <div class="label">Equipos operando</div>
+                    <div class="value" id="equiposOperando">1</div>
+                    <span class="change up">↑ 100% disponibilidad</span>
+                </div>
+                <div class="stat-card">
+                    <span class="icon"><i class="fas fa-exclamation-triangle"></i></span>
+                    <div class="label">Alertas activas</div>
+                    <div class="value" id="alertasActivas">0</div>
+                    <span class="change down">↓ Sin alertas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="icon"><i class="fas fa-times-circle"></i></span>
+                    <div class="label">Fallas detectadas</div>
+                    <div class="value" id="fallasDetectadas">0</div>
+                    <span class="change down">↓ 0 fallas</span>
+                </div>
+            </div>
+
+            <!-- Variables en tiempo real -->
+            <div class="vars-section">
+                <div class="header">
+                    <h3>📡 Variables operativas en tiempo real</h3>
+                    <div class="live">
+                        <span class="dot"></span>
+                        <span>EN VIVO</span>
+                    </div>
+                </div>
+                
+                <!-- ESTRICTAMENTE LAS VARIABLES 1 Y 2 -->
+                <div class="vars-grid" id="varsGrid">
+                    <div class="var-item">
+                        <span class="name">Variable 1</span>
+                        <span class="value normal" id="v1">--</span>
+                    </div>
+                    <div class="var-item">
+                        <span class="name">Variable 2</span>
+                        <span class="value normal" id="v2">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome -->
+            <div class="welcome-box">
+                <div>
+                    <h3>👋 Bienvenido al sistema predictivo</h3>
+                    <p>Monitoreo en tiempo real · Detección temprana de fallas · IA para BES</p>
+                </div>
+                <div class="status">
+                    <span class="dot"></span>
+                    <span>Sistema operativo</span>
+                </div>
+            </div>
+
+            <!-- Riesgo IA en vivo -->
+            <div class="vars-section" style="margin-top:24px;">
+                <div class="header">
+                    <h3>🧠 Riesgo de falla (IA) <span id="iaLoading" style="display:none; font-size:0.7rem; font-weight:400; color:var(--text-secondary);">⏳ consultando modelo...</span></h3>
+                    <button id="btnRefrescarIA" style="background:none; border:1px solid var(--border-color); color:var(--text-secondary); border-radius:30px; padding:4px 14px; cursor:pointer; font-size:0.75rem; font-family:inherit;">🔄 Actualizar</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap;">
+                    <div style="font-size:2rem; font-weight:700;" id="iaProb">—</div>
+                    <div style="flex:1; min-width:160px; height:8px; background:rgba(255,255,255,0.08); border-radius:30px; overflow:hidden;">
+                        <div id="iaFill" style="height:100%; width:0%; background:#22C55E; border-radius:30px; transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary);" id="iaMensaje">Calculando...</div>
+                </div>
+                <div id="iaError" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; color:#EF4444; font-size:0.8rem;"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // CONFIGURACIÓN SUPABASE
+        // ============================================================
+        const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+        
+        // Unificado el nombre a supabaseClient igual que en login.html
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ============================================================
+        // SIDEBAR TOGGLE
+        // ============================================================
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // ============================================================
+        // VERIFICAR SESIÓN
+        // ============================================================
+        async function verificarSesion() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                
+                if (error || !session) { 
+                    window.location.replace('login.html'); 
+                    return; 
+                }
+                
+                // Validación de seguridad por si el correo viene nulo o no se ha cargado
+                if (session.user && session.user.email) {
+                    document.getElementById('userEmail').textContent = session.user.email;
+                    document.getElementById('userAvatar').textContent = session.user.email.charAt(0).toUpperCase();
+                } else {
+                    document.getElementById('userEmail').textContent = "Operador";
+                    document.getElementById('userAvatar').textContent = "O";
+                }
+
+            } catch (err) { 
+                console.error("Error validando sesión:", err);
+                window.location.replace('login.html'); 
+            }
+        }
+
+        // ============================================================
+        // CERRAR SESIÓN (CORREGIDO)
+        // ============================================================
+        document.getElementById('btnLogout').addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Cambiamos el texto para indicar al usuario que está procesando
+            this.textContent = "Saliendo...";
+            this.style.opacity = "0.7";
+
+            try {
+                // Intentamos cerrar la sesión en el servidor de Supabase
+                await Promise.race([
+                    supabaseClient.auth.signOut(),
+                    new Promise((resolve) => setTimeout(resolve, 2500))
+                ]);
+            } catch (error) {
+                // Si el servidor falla, lo registramos pero continuamos cerrando localmente
+                console.error("Error durante el cierre en Supabase:", error);
+            } finally {
+                // El bloque finally asegura que esto se ejecute SÍ o SÍ
+                // Limpieza forzada: borra la sesion real de Supabase
+                // ademas de la llave propia, por si signOut() fallo en el servidor
+                Object.keys(localStorage).forEach((key) => {
+                    if (key.startsWith('sb-') || key === 'bes_user') {
+                        localStorage.removeItem(key);
+                    }
+                });
+                sessionStorage.clear();
+                // replace() destruye el historial para que no puedan dar "Atrás" en el navegador
+                window.location.replace('login.html'); 
+            }
+        });
+
+        // ============================================================
+        // SIMULAR DATOS - AJUSTADO SÓLO PARA VARIABLE 1 Y 2
+        // ============================================================
+        function actualizarVariables() {
+            const ids = ['v1', 'v2'];
+            const valores = [
+                (Math.random() * 2 + 2.5).toFixed(2) + ' A',   // Simulación para Var 1
+                (Math.random() * 10 + 115).toFixed(1) + ' V'   // Simulación para Var 2
+            ];
+            
+            ids.forEach((id, i) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = valores[i];
+            });
+        }
+
+        // ============================================================
+        // RIESGO IA EN VIVO (backend real)
+        // ============================================================
+        const ML_API_BASE = 'https://predictibes.onrender.com';
+
+        function generarLecturas() {
+            return {
+                pip: +(Math.random() * 40 + 100).toFixed(0),
+                pdp: +(Math.random() * 200 + 1300).toFixed(0),
+                pdt: +(Math.random() * 20 + 170).toFixed(0),
+                vib: +(Math.random() * 1.5 + 0.5).toFixed(2)
+            };
+        }
+
+        async function actualizarRiesgoIA() {
+            const loadingTag = document.getElementById('iaLoading');
+            const errorBox = document.getElementById('iaError');
+            const btn = document.getElementById('btnRefrescarIA');
+            const iaProb = document.getElementById('iaProb');
+            const iaFill = document.getElementById('iaFill');
+            const iaMensaje = document.getElementById('iaMensaje');
+
+            errorBox.style.display = 'none';
+            loadingTag.style.display = 'inline';
+            btn.disabled = true;
+
+            const lecturas = generarLecturas();
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const resp = await fetch(`${ML_API_BASE}/api/v1/predict/single`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        feature_1: lecturas.pip,
+                        feature_2: lecturas.pdp,
+                        feature_3: lecturas.pdt,
+                        feature_4: lecturas.vib
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!resp.ok) throw new Error('El servidor respondió con error ' + resp.status);
+
+                const data = await resp.json();
+                const prob = Math.max(0, Math.min(1, Number(data.prediction)));
+                const pct = (prob * 100).toFixed(1);
+
+                iaProb.textContent = pct + '%';
+
+                const alertasEl = document.getElementById('alertasActivas');
+                const fallasEl = document.getElementById('fallasDetectadas');
+
+                if (prob >= 0.7) {
+                    iaProb.style.color = '#EF4444';
+                    iaFill.style.background = '#EF4444';
+                    iaMensaje.textContent = '🔴 Riesgo alto: mantenimiento urgente';
+                    if (alertasEl) alertasEl.textContent = '1';
+                    if (fallasEl) fallasEl.textContent = '1';
+                } else if (prob >= 0.3) {
+                    iaProb.style.color = '#F59E0B';
+                    iaFill.style.background = '#F59E0B';
+                    iaMensaje.textContent = '🟠 Riesgo moderado: monitorear de cerca';
+                    if (alertasEl) alertasEl.textContent = '1';
+                    if (fallasEl) fallasEl.textContent = '0';
+                } else {
+                    iaProb.style.color = '#22C55E';
+                    iaFill.style.background = '#22C55E';
+                    iaMensaje.textContent = '✅ Riesgo bajo: operación normal';
+                    if (alertasEl) alertasEl.textContent = '0';
+                    if (fallasEl) fallasEl.textContent = '0';
+                }
+                iaFill.style.width = pct + '%';
+
+            } catch (err) {
+                console.error('Error consultando el modelo predictivo:', err);
+                errorBox.style.display = 'block';
+                errorBox.textContent = (err.name === 'AbortError')
+                    ? '⏱️ El servidor tardó demasiado en responder (puede estar "dormido" en Render). Reintenta en unos segundos.'
+                    : '⚠️ No se pudo conectar con el modelo predictivo (' + err.message + ').';
+                iaProb.textContent = '—';
+                iaMensaje.textContent = 'Sin datos del modelo.';
+            } finally {
+                loadingTag.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('btnRefrescarIA').addEventListener('click', actualizarRiesgoIA);
+
+        // ============================================================
+        // INICIALIZAR
+        // ============================================================
+        // Usa el intervalo de actualización configurado en Configuración (tabla user_settings) si existe
+        async function obtenerIntervaloConfigurado() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) return 3000;
+                const { data, error } = await supabaseClient
+                    .from('user_settings')
+                    .select('monitor_interval_seconds')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+                if (error) throw error;
+                return data?.monitor_interval_seconds ? data.monitor_interval_seconds * 1000 : 3000;
+            } catch (err) {
+                console.warn('No se pudo leer el intervalo configurado, se usa el valor por defecto (3s):', err.message);
+                return 3000;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            verificarSesion();
+            actualizarVariables();
+            const intervalo = await obtenerIntervaloConfigurado();
+            setInterval(actualizarVariables, intervalo);
+            actualizarRiesgoIA();
+        });
+    </script>
+
+</body>
+</html>
