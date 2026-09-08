@@ -215,87 +215,39 @@
             </div>
 
             <div class="filters">
-                <input type="text" placeholder="🔍 Buscar por pozo..." id="searchInput">
-                <select id="filterStatus">
-                    <option value="">Todos los estados</option>
-                    <option value="resuelto">Resuelto</option>
-                    <option value="en-proceso">En proceso</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="critico">Crítico</option>
+                <input type="text" placeholder="🔍 Buscar por ID o categoría..." id="searchInput">
+                <select id="filterCategory">
+                    <option value="">Todas las categorías</option>
                 </select>
-                <select id="filterType">
-                    <option value="">Todos los tipos</option>
-                    <option value="mecanica">Mecánica</option>
-                    <option value="electrica">Eléctrica</option>
-                    <option value="termica">Térmica</option>
-                    <option value="hidraulica">Hidráulica</option>
-                </select>
+                <button id="btnRecargarHistorial" style="padding:8px 16px; background:var(--accent); border:none; border-radius:30px; color:white; font-weight:600; font-size:0.8rem; cursor:pointer; font-family:inherit;">🔄 Recargar</button>
             </div>
+
+            <div id="historialError" style="display:none; margin-bottom:16px; padding:12px 16px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; color:#EF4444; font-size:0.85rem;"></div>
 
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
                             <th>Fecha</th>
-                            <th>Pozo</th>
-                            <th>Tipo</th>
-                            <th>Variable afectada</th>
-                            <th>Estado</th>
-                            <th>Acción</th>
+                            <th>ID de registro</th>
+                            <th>Categoría</th>
+                            <th>Valor</th>
                         </tr>
                     </thead>
                     <tbody id="historialBody">
-                        <tr>
-                            <td>2025-06-20 14:30</td>
-                            <td>Pozo BES-01</td>
-                            <td>Térmica</td>
-                            <td>PDT · 187°F → 192°F</td>
-                            <td><span class="status-badge resuelto">✅ Resuelto</span></td>
-                            <td>Mantenimiento preventivo</td>
-                        </tr>
-                        <tr>
-                            <td>2025-06-18 09:15</td>
-                            <td>Pozo BES-03</td>
-                            <td>Eléctrica</td>
-                            <td>Voltaje · 118V → 98V</td>
-                            <td><span class="status-badge en-proceso">⏳ En proceso</span></td>
-                            <td>Revisión eléctrica</td>
-                        </tr>
-                        <tr>
-                            <td>2025-06-15 22:45</td>
-                            <td>Pozo BES-02</td>
-                            <td>Mecánica</td>
-                            <td>Vibración · 0.82G → 2.1G</td>
-                            <td><span class="status-badge pendiente">⏰ Pendiente</span></td>
-                            <td>Inspección de rodamientos</td>
-                        </tr>
-                        <tr>
-                            <td>2025-06-12 11:00</td>
-                            <td>Pozo BES-04</td>
-                            <td>Hidráulica</td>
-                            <td>PIP · 124psi → 85psi</td>
-                            <td><span class="status-badge critico">🔴 Crítico</span></td>
-                            <td>Revisión urgente</td>
-                        </tr>
-                        <tr>
-                            <td>2025-06-10 16:20</td>
-                            <td>Pozo BES-01</td>
-                            <td>Térmica</td>
-                            <td>TLP · 112°F → 125°F</td>
-                            <td><span class="status-badge resuelto">✅ Resuelto</span></td>
-                            <td>Limpieza de intercambiador</td>
-                        </tr>
+                        <tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">⏳ Cargando registros desde el backend...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="footer-table">
-                Mostrando 5 de 24 registros · Última actualización: hace 3min
+            <div class="footer-table" id="footerTable">
+                Cargando...
             </div>
         </div>
     </div>
 
     <script>
+        const ML_API_BASE = 'https://predictibes.onrender.com';
         const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -325,8 +277,6 @@
             } catch (error) {
                 console.error('Error durante el cierre de sesión:', error);
             } finally {
-                // Limpieza forzada: borra la sesion real de Supabase
-                // ademas de la llave propia, por si signOut() fallo en el servidor
                 Object.keys(localStorage).forEach((key) => {
                     if (key.startsWith('sb-') || key === 'bes_user') {
                         localStorage.removeItem(key);
@@ -337,7 +287,74 @@
             }
         });
 
-        // Filtros
+        let registrosCache = [];
+
+        function formatFecha(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+            } catch { return iso; }
+        }
+
+        function renderTabla(registros) {
+            const body = document.getElementById('historialBody');
+            if (!registros.length) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">No hay registros para mostrar.</td></tr>';
+                return;
+            }
+            body.innerHTML = registros.map(r => `
+                <tr>
+                    <td>${formatFecha(r.timestamp)}</td>
+                    <td>${r.record_id}</td>
+                    <td>${r.category}</td>
+                    <td>${r.value}</td>
+                </tr>
+            `).join('');
+        }
+
+        function poblarFiltroCategoria(registros) {
+            const select = document.getElementById('filterCategory');
+            const actual = select.value;
+            const categorias = [...new Set(registros.map(r => r.category))].sort();
+            select.innerHTML = '<option value="">Todas las categorías</option>' +
+                categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+            select.value = actual;
+        }
+
+        async function cargarHistorial(category) {
+            const body = document.getElementById('historialBody');
+            const errorBox = document.getElementById('historialError');
+            const footer = document.getElementById('footerTable');
+            errorBox.style.display = 'none';
+            body.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">⏳ Cargando registros desde el backend...</td></tr>';
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const params = new URLSearchParams({ limit: '100' });
+                if (category) params.set('category', category);
+                const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?${params.toString()}`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!resp.ok) throw new Error('El servidor respondió con error ' + resp.status);
+
+                const data = await resp.json();
+                registrosCache = data.data || [];
+                poblarFiltroCategoria(registrosCache);
+                renderTabla(registrosCache);
+                footer.textContent = `Mostrando ${registrosCache.length} de ${data.total_records} registros · Última actualización: hace unos segundos`;
+            } catch (err) {
+                console.error('Error cargando historial:', err);
+                errorBox.style.display = 'block';
+                errorBox.textContent = (err.name === 'AbortError')
+                    ? '⏱️ El servidor tardó demasiado en responder (puede estar "dormido" en Render). Reintenta en unos segundos.'
+                    : '⚠️ No se pudo conectar con el backend (' + err.message + ').';
+                body.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-secondary); padding:24px;">No se pudieron cargar los registros.</td></tr>';
+                footer.textContent = '';
+            }
+        }
+
         document.getElementById('searchInput').addEventListener('input', function() {
             const search = this.value.toLowerCase();
             document.querySelectorAll('#historialBody tr').forEach(row => {
@@ -345,18 +362,18 @@
             });
         });
 
-        document.getElementById('filterStatus').addEventListener('change', function() {
-            const status = this.value;
-            document.querySelectorAll('#historialBody tr').forEach(row => {
-                const badge = row.querySelector('.status-badge');
-                if (!badge) return;
-                if (!status) { row.style.display = ''; return; }
-                const map = { 'resuelto':'resuelto', 'en-proceso':'en proceso', 'pendiente':'pendiente', 'critico':'crítico' };
-                row.style.display = badge.textContent.toLowerCase().includes(map[status] || status) ? '' : 'none';
-            });
+        document.getElementById('filterCategory').addEventListener('change', function() {
+            cargarHistorial(this.value || undefined);
         });
 
-        document.addEventListener('DOMContentLoaded', verificarSesion);
+        document.getElementById('btnRecargarHistorial').addEventListener('click', function() {
+            cargarHistorial(document.getElementById('filterCategory').value || undefined);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarSesion();
+            cargarHistorial();
+        });
     </script>
 </body>
 </html>

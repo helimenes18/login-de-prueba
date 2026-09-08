@@ -243,37 +243,41 @@
                         <div class="alert-card">
                             <div class="icon">⚠️</div>
                             <div class="info">
-                                <h4>Posible sobrecalentamiento</h4>
-                                <p>PDT en aumento · 187°F → 192°F en 2h</p>
+                                <h4>Temperatura de descarga (PDT)</h4>
+                                <p>Lectura actual: <span id="alertPDT">—</span> °F</p>
                             </div>
                         </div>
                         <div class="alert-card warning">
                             <div class="icon">📊</div>
                             <div class="info">
-                                <h4>Presión de entrada baja</h4>
-                                <p>PIP: 124 psi · Umbral mínimo: 100 psi</p>
+                                <h4>Presión de entrada (PIP)</h4>
+                                <p>Lectura actual: <span id="alertPIP">—</span> psi · Umbral mínimo: 100 psi</p>
                             </div>
                         </div>
                         <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:12px; text-align:center; color:var(--text-secondary); font-size:0.8rem;">
                             <span class="badge-ia">🧠 IA activa</span>
-                            <span style="margin-left:12px;">Última predicción: hace 2min</span>
+                            <span style="margin-left:12px;">Última predicción: <span id="lastPredictTime">cargando...</span></span>
                         </div>
                     </div>
                 </div>
 
                 <div>
                     <div class="card">
-                        <h3>📈 Pronóstico de fallas</h3>
+                        <h3>📈 Pronóstico de fallas <span id="predictLoading" style="display:none; font-size:0.7rem; font-weight:400; color:var(--text-secondary);">⏳ consultando modelo...</span></h3>
                         <div class="predict-card">
-                            <div class="row"><span class="label">Falla estimada</span><span class="value">Desgaste de rodamientos</span></div>
-                            <div class="row"><span class="label">Tiempo estimado</span><span class="value danger">12-18 horas</span></div>
-                            <div class="row"><span class="label">Confianza del modelo</span><span class="value">92%</span></div>
-                            <div class="confidence-bar"><div class="fill" style="width:92%;"></div></div>
-                            <div style="margin-top:10px; font-size:0.75rem; color:var(--text-secondary);">Variables críticas: PDT, PDP, Vibración</div>
+                            <div class="row"><span class="label">Probabilidad de falla</span><span class="value" id="predProb">—</span></div>
+                            <div class="confidence-bar"><div class="fill" id="predFill" style="width:0%;"></div></div>
+                            <div style="margin-top:10px; font-size:0.75rem; color:var(--text-secondary);">
+                                Variables enviadas al modelo &middot;
+                                PIP: <span id="sentPIP">—</span> psi &middot;
+                                PDP: <span id="sentPDP">—</span> psi &middot;
+                                PDT: <span id="sentPDT">—</span> °F &middot;
+                                Vibración: <span id="sentVib">—</span> G
+                            </div>
                         </div>
-                        <div class="action-box">
-                            ✅ Acción recomendada: Mantenimiento preventivo
-                        </div>
+                        <div class="action-box" id="actionBox">Calculando recomendación...</div>
+                        <div id="predictError" style="display:none; margin-top:12px; padding:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; color:#EF4444; font-size:0.8rem;"></div>
+                        <button id="btnRefreshPredict" style="margin-top:14px; width:100%; background:var(--accent); border:none; padding:10px; border-radius:12px; font-weight:600; color:white; cursor:pointer; font-family:inherit; font-size:0.85rem;">🔄 Actualizar predicción</button>
                     </div>
                 </div>
             </div>
@@ -322,7 +326,120 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', verificarSesion);
+        // ================= Conexión con el backend de ML =================
+        const ML_API_BASE = 'https://predictibes.onrender.com';
+
+        function generarLecturas() {
+            // Simula lecturas de sensores en los mismos rangos que Monitoreo,
+            // mientras no exista una fuente de datos real conectada.
+            return {
+                pip: +(Math.random() * 40 + 100).toFixed(0),
+                pdp: +(Math.random() * 200 + 1300).toFixed(0),
+                pdt: +(Math.random() * 20 + 170).toFixed(0),
+                vib: +(Math.random() * 1.5 + 0.5).toFixed(2)
+            };
+        }
+
+        async function ejecutarPrediccion() {
+            const btn = document.getElementById('btnRefreshPredict');
+            const loadingTag = document.getElementById('predictLoading');
+            const errorBox = document.getElementById('predictError');
+            const actionBox = document.getElementById('actionBox');
+
+            errorBox.style.display = 'none';
+            loadingTag.style.display = 'inline';
+            btn.disabled = true;
+            btn.textContent = '⏳ Consultando...';
+
+            const lecturas = generarLecturas();
+            document.getElementById('sentPIP').textContent = lecturas.pip;
+            document.getElementById('sentPDP').textContent = lecturas.pdp;
+            document.getElementById('sentPDT').textContent = lecturas.pdt;
+            document.getElementById('sentVib').textContent = lecturas.vib;
+            document.getElementById('alertPIP').textContent = lecturas.pip;
+            document.getElementById('alertPDT').textContent = lecturas.pdt;
+
+            try {
+                const controller = new AbortController();
+                // Render "duerme" instancias gratuitas inactivas; la primera
+                // llamada puede tardar hasta ~50s en despertar el servidor.
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+                const resp = await fetch(`${ML_API_BASE}/api/v1/predict/single`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        feature_1: lecturas.pip,
+                        feature_2: lecturas.pdp,
+                        feature_3: lecturas.pdt,
+                        feature_4: lecturas.vib
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!resp.ok) {
+                    throw new Error('El servidor respondió con error ' + resp.status);
+                }
+
+                const data = await resp.json();
+                const prob = Math.max(0, Math.min(1, Number(data.prediction)));
+                const pct = (prob * 100).toFixed(1);
+
+                const predProb = document.getElementById('predProb');
+                const predFill = document.getElementById('predFill');
+                predProb.textContent = pct + '%';
+                predFill.style.width = pct + '%';
+
+                if (prob >= 0.7) {
+                    predProb.style.color = '#EF4444';
+                    predFill.style.background = '#EF4444';
+                    actionBox.textContent = '🔴 Riesgo alto: programar mantenimiento urgente';
+                    actionBox.style.color = '#EF4444';
+                    actionBox.style.background = 'rgba(239, 68, 68, 0.1)';
+                    actionBox.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                } else if (prob >= 0.3) {
+                    predProb.style.color = '#F59E0B';
+                    predFill.style.background = '#F59E0B';
+                    actionBox.textContent = '🟠 Riesgo moderado: monitorear de cerca';
+                    actionBox.style.color = '#F59E0B';
+                    actionBox.style.background = 'rgba(245, 158, 11, 0.1)';
+                    actionBox.style.borderColor = 'rgba(245, 158, 11, 0.2)';
+                } else {
+                    predProb.style.color = '#22C55E';
+                    predFill.style.background = '#22C55E';
+                    actionBox.textContent = '✅ Riesgo bajo: operación normal';
+                    actionBox.style.color = '#22C55E';
+                    actionBox.style.background = 'rgba(34, 197, 94, 0.1)';
+                    actionBox.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+                }
+
+                document.getElementById('lastPredictTime').textContent = 'hace unos segundos';
+
+            } catch (err) {
+                console.error('Error consultando el modelo predictivo:', err);
+                errorBox.style.display = 'block';
+                errorBox.textContent = (err.name === 'AbortError')
+                    ? '⏱️ El servidor tardó demasiado en responder (puede estar "dormido" en Render). Espera unos segundos y vuelve a intentar.'
+                    : '⚠️ No se pudo conectar con el modelo predictivo (' + err.message + '). Verifica tu conexión o inténtalo de nuevo.';
+                document.getElementById('predProb').textContent = '—';
+                actionBox.textContent = 'No se pudo calcular una recomendación.';
+                actionBox.style.color = 'var(--text-secondary)';
+                actionBox.style.background = 'rgba(255,255,255,0.03)';
+                actionBox.style.borderColor = 'var(--border-color)';
+            } finally {
+                loadingTag.style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = '🔄 Actualizar predicción';
+            }
+        }
+
+        document.getElementById('btnRefreshPredict').addEventListener('click', ejecutarPrediccion);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarSesion();
+            ejecutarPrediccion();
+        });
     </script>
 </body>
 </html>

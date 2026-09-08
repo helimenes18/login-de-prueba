@@ -514,6 +514,22 @@
                 </div>
             </div>
 
+            <!-- Riesgo IA en vivo -->
+            <div class="vars-section" style="margin-top:24px;">
+                <div class="header">
+                    <h3>🧠 Riesgo de falla (IA) <span id="iaLoading" style="display:none; font-size:0.7rem; font-weight:400; color:var(--text-secondary);">⏳ consultando modelo...</span></h3>
+                    <button id="btnRefrescarIA" style="background:none; border:1px solid var(--border-color); color:var(--text-secondary); border-radius:30px; padding:4px 14px; cursor:pointer; font-size:0.75rem; font-family:inherit;">🔄 Actualizar</button>
+                </div>
+                <div style="display:flex; align-items:center; gap:16px; margin-top:12px; flex-wrap:wrap;">
+                    <div style="font-size:2rem; font-weight:700;" id="iaProb">—</div>
+                    <div style="flex:1; min-width:160px; height:8px; background:rgba(255,255,255,0.08); border-radius:30px; overflow:hidden;">
+                        <div id="iaFill" style="height:100%; width:0%; background:#22C55E; border-radius:30px; transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary);" id="iaMensaje">Calculando...</div>
+                </div>
+                <div id="iaError" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:12px; color:#EF4444; font-size:0.8rem;"></div>
+            </div>
+
         </div>
     </div>
 
@@ -612,12 +628,104 @@
         }
 
         // ============================================================
+        // RIESGO IA EN VIVO (backend real)
+        // ============================================================
+        const ML_API_BASE = 'https://predictibes.onrender.com';
+
+        function generarLecturas() {
+            return {
+                pip: +(Math.random() * 40 + 100).toFixed(0),
+                pdp: +(Math.random() * 200 + 1300).toFixed(0),
+                pdt: +(Math.random() * 20 + 170).toFixed(0),
+                vib: +(Math.random() * 1.5 + 0.5).toFixed(2)
+            };
+        }
+
+        async function actualizarRiesgoIA() {
+            const loadingTag = document.getElementById('iaLoading');
+            const errorBox = document.getElementById('iaError');
+            const btn = document.getElementById('btnRefrescarIA');
+            const iaProb = document.getElementById('iaProb');
+            const iaFill = document.getElementById('iaFill');
+            const iaMensaje = document.getElementById('iaMensaje');
+
+            errorBox.style.display = 'none';
+            loadingTag.style.display = 'inline';
+            btn.disabled = true;
+
+            const lecturas = generarLecturas();
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const resp = await fetch(`${ML_API_BASE}/api/v1/predict/single`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        feature_1: lecturas.pip,
+                        feature_2: lecturas.pdp,
+                        feature_3: lecturas.pdt,
+                        feature_4: lecturas.vib
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!resp.ok) throw new Error('El servidor respondió con error ' + resp.status);
+
+                const data = await resp.json();
+                const prob = Math.max(0, Math.min(1, Number(data.prediction)));
+                const pct = (prob * 100).toFixed(1);
+
+                iaProb.textContent = pct + '%';
+
+                const alertasEl = document.getElementById('alertasActivas');
+                const fallasEl = document.getElementById('fallasDetectadas');
+
+                if (prob >= 0.7) {
+                    iaProb.style.color = '#EF4444';
+                    iaFill.style.background = '#EF4444';
+                    iaMensaje.textContent = '🔴 Riesgo alto: mantenimiento urgente';
+                    if (alertasEl) alertasEl.textContent = '1';
+                    if (fallasEl) fallasEl.textContent = '1';
+                } else if (prob >= 0.3) {
+                    iaProb.style.color = '#F59E0B';
+                    iaFill.style.background = '#F59E0B';
+                    iaMensaje.textContent = '🟠 Riesgo moderado: monitorear de cerca';
+                    if (alertasEl) alertasEl.textContent = '1';
+                    if (fallasEl) fallasEl.textContent = '0';
+                } else {
+                    iaProb.style.color = '#22C55E';
+                    iaFill.style.background = '#22C55E';
+                    iaMensaje.textContent = '✅ Riesgo bajo: operación normal';
+                    if (alertasEl) alertasEl.textContent = '0';
+                    if (fallasEl) fallasEl.textContent = '0';
+                }
+                iaFill.style.width = pct + '%';
+
+            } catch (err) {
+                console.error('Error consultando el modelo predictivo:', err);
+                errorBox.style.display = 'block';
+                errorBox.textContent = (err.name === 'AbortError')
+                    ? '⏱️ El servidor tardó demasiado en responder (puede estar "dormido" en Render). Reintenta en unos segundos.'
+                    : '⚠️ No se pudo conectar con el modelo predictivo (' + err.message + ').';
+                iaProb.textContent = '—';
+                iaMensaje.textContent = 'Sin datos del modelo.';
+            } finally {
+                loadingTag.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('btnRefrescarIA').addEventListener('click', actualizarRiesgoIA);
+
+        // ============================================================
         // INICIALIZAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
             verificarSesion();
             actualizarVariables();
             setInterval(actualizarVariables, 3000);
+            actualizarRiesgoIA();
         });
     </script>
 

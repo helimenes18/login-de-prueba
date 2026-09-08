@@ -235,7 +235,7 @@
                     <h3>📊 Generar reporte</h3>
                     <div class="form-group">
                         <label>Tipo de reporte</label>
-                        <select>
+                        <select id="selectTipoReporte">
                             <option>Reporte operativo</option>
                             <option>Reporte de fallas</option>
                             <option>Reporte predictivo</option>
@@ -252,23 +252,20 @@
                     </div>
                     <div class="form-group">
                         <label>Formato</label>
-                        <select>
-                            <option>PDF</option>
-                            <option>Excel (.xlsx)</option>
+                        <select id="selectFormato">
                             <option>CSV</option>
+                            <option>JSON</option>
                         </select>
                     </div>
-                    <button class="btn-primary"><i class="fas fa-download"></i> Generar y descargar</button>
+                    <button class="btn-primary" id="btnGenerarReporte"><i class="fas fa-download"></i> Generar y descargar</button>
+                    <p style="margin-top:8px; font-size:0.7rem; color:var(--text-secondary);">Exporta los registros reales disponibles en el backend (las fechas aún no filtran del lado del servidor).</p>
                 </div>
 
                 <div>
                     <div class="card" style="margin-bottom:16px;">
-                        <h3>📈 Resumen del período</h3>
-                        <div class="stats-mini">
-                            <div class="item"><div class="num">24</div><div class="lab">Eventos registrados</div></div>
-                            <div class="item"><div class="num" style="color:#22C55E;">18</div><div class="lab">Resueltos</div></div>
-                            <div class="item"><div class="num" style="color:#F59E0B;">4</div><div class="lab">En proceso</div></div>
-                            <div class="item"><div class="num" style="color:#EF4444;">2</div><div class="lab">Pendientes</div></div>
+                        <h3>📈 Resumen del período <button id="btnRecargarResumen" style="float:right; background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.75rem; font-family:inherit;">🔄</button></h3>
+                        <div class="stats-mini" id="statsMini">
+                            <div class="item" style="grid-column:1/-1;"><div class="lab">⏳ Cargando...</div></div>
                         </div>
                     </div>
                     <div class="card">
@@ -276,6 +273,7 @@
                         <div class="report-item"><span>Reporte_operativo_2025-06.pdf</span><span class="dl">📥</span></div>
                         <div class="report-item"><span>Fallas_BES-01_2025-06.xlsx</span><span class="dl">📥</span></div>
                         <div class="report-item"><span>Predictivo_junio_2025.csv</span><span class="dl">📥</span></div>
+                        <p style="margin-top:8px; font-size:0.65rem; color:var(--text-secondary);">Esta lista es de ejemplo; el backend aún no expone un historial de reportes generados.</p>
                     </div>
                 </div>
             </div>
@@ -283,6 +281,7 @@
     </div>
 
     <script>
+        const ML_API_BASE = 'https://predictibes.onrender.com';
         const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -312,8 +311,6 @@
             } catch (error) {
                 console.error('Error durante el cierre de sesión:', error);
             } finally {
-                // Limpieza forzada: borra la sesion real de Supabase
-                // ademas de la llave propia, por si signOut() fallo en el servidor
                 Object.keys(localStorage).forEach((key) => {
                     if (key.startsWith('sb-') || key === 'bes_user') {
                         localStorage.removeItem(key);
@@ -324,7 +321,85 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', verificarSesion);
+        async function cargarResumen() {
+            const cont = document.getElementById('statsMini');
+            cont.innerHTML = '<div class="item" style="grid-column:1/-1;"><div class="lab">⏳ Cargando resumen desde el backend...</div></div>';
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const resp = await fetch(`${ML_API_BASE}/api/v1/context/summary`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!resp.ok) throw new Error('Error ' + resp.status);
+                const data = await resp.json();
+                const entries = Object.entries(data || {});
+                if (!entries.length) {
+                    cont.innerHTML = '<div class="item" style="grid-column:1/-1;"><div class="lab">El backend no devolvió datos de resumen.</div></div>';
+                    return;
+                }
+                cont.innerHTML = entries.slice(0, 8).map(([k, v]) => `
+                    <div class="item">
+                        <div class="num">${typeof v === 'number' ? v : (typeof v === 'string' ? v : JSON.stringify(v))}</div>
+                        <div class="lab">${k.replace(/_/g, ' ')}</div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error cargando resumen:', err);
+                const msg = (err.name === 'AbortError')
+                    ? 'El servidor tardó demasiado en responder (puede estar dormido en Render).'
+                    : 'No se pudo cargar el resumen (' + err.message + ').';
+                cont.innerHTML = `<div class="item" style="grid-column:1/-1;"><div class="lab" style="color:#EF4444;">⚠️ ${msg}</div></div>`;
+            }
+        }
+
+        document.getElementById('btnRecargarResumen').addEventListener('click', cargarResumen);
+
+        document.getElementById('btnGenerarReporte').addEventListener('click', async function() {
+            const btn = this;
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Generando...';
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const resp = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=1000`, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!resp.ok) throw new Error('Error ' + resp.status);
+                const data = await resp.json();
+                const registros = data.data || [];
+                const formato = document.getElementById('selectFormato').value;
+
+                let blob, filename;
+                if (formato === 'CSV') {
+                    const header = 'record_id,category,value,timestamp\n';
+                    const rows = registros.map(r => `${r.record_id},${r.category},${r.value},${r.timestamp || ''}`).join('\n');
+                    blob = new Blob([header + rows], { type: 'text/csv' });
+                    filename = 'reporte_predictivebes.csv';
+                } else {
+                    blob = new Blob([JSON.stringify(registros, null, 2)], { type: 'application/json' });
+                    filename = 'reporte_predictivebes.json';
+                }
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error('Error generando el reporte:', err);
+                alert('No se pudo generar el reporte: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            verificarSesion();
+            cargarResumen();
+        });
     </script>
 </body>
 </html>
