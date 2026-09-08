@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PredictiveBES · Diagnóstico</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0a0a1a; --card:rgba(30,27,75,0.5); --border:rgba(139,92,246,0.2);
+    --accent:#8B5CF6; --ok:#22C55E; --warn:#F59E0B; --err:#EF4444; --text:#E2E8F0; --sec:#94A3B8;
+  }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:linear-gradient(135deg,#000 0%,#1E1B4B 100%);
+        color:var(--text); margin:0; padding:24px; min-height:100vh; }
+  h1{ font-size:1.4rem; margin-bottom:4px;}
+  p.sub{ color:var(--sec); margin-top:0; margin-bottom:24px; font-size:0.85rem;}
+  .toolbar{ margin-bottom:20px; }
+  button{ background:var(--accent); border:none; color:white; padding:10px 20px; border-radius:30px;
+          font-weight:600; cursor:pointer; font-size:0.85rem; }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+  .grid{ display:grid; grid-template-columns:1fr; gap:12px; max-width:820px; }
+  .test{ background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 18px;
+         display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .test .left{ display:flex; flex-direction:column; gap:2px; }
+  .test .name{ font-weight:600; font-size:0.9rem; }
+  .test .detail{ font-size:0.75rem; color:var(--sec); max-width:520px; }
+  .badge{ font-size:0.75rem; font-weight:700; padding:4px 12px; border-radius:30px; white-space:nowrap; }
+  .badge.pending{ background:rgba(255,255,255,0.08); color:var(--sec); }
+  .badge.running{ background:rgba(245,158,11,0.15); color:var(--warn); }
+  .badge.ok{ background:rgba(34,197,94,0.15); color:var(--ok); }
+  .badge.fail{ background:rgba(239,68,68,0.15); color:var(--err); }
+  .badge.warn{ background:rgba(245,158,11,0.15); color:var(--warn); }
+  .section-title{ margin:28px 0 10px; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; color:var(--sec); }
+  #resumen{ margin-top:24px; padding:16px; border-radius:12px; background:var(--card); border:1px solid var(--border); max-width:820px; font-size:0.9rem; }
+</style>
+</head>
+<body>
+
+<h1>🩺 Diagnóstico de PredictiveBES</h1>
+<p class="sub">Verifica el backend (Render), Supabase Auth y las tablas necesarias para Configuración y Reportes. No modifica ni borra datos.</p>
+
+<div class="toolbar"><button id="btnRun">▶️ Ejecutar todas las pruebas</button></div>
+
+<div class="section-title">Backend ML (Render)</div>
+<div class="grid" id="grid-backend"></div>
+
+<div class="section-title">Supabase</div>
+<div class="grid" id="grid-supabase"></div>
+
+<div id="resumen" style="display:none;"></div>
+
+<script>
+const ML_API_BASE = 'https://predictibes.onrender.com';
+const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const tests = [
+  {
+    id: 'root', group: 'backend', name: 'Backend responde (GET /)',
+    detail: 'Puede tardar ~50s la primera vez si Render "durmió" la instancia gratuita.',
+    run: async () => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 60000);
+      const r = await fetch(`${ML_API_BASE}/`, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return 'Backend activo.';
+    }
+  },
+  {
+    id: 'predict', group: 'backend', name: 'Predicción IA (POST /api/v1/predict/single)',
+    detail: 'Usado en Dashboard, Monitoreo y Predictivo.',
+    run: async () => {
+      const r = await fetch(`${ML_API_BASE}/api/v1/predict/single`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feature_1: 120, feature_2: 1400, feature_3: 180, feature_4: 1.0 })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      if (typeof data.prediction !== 'number') throw new Error('Respuesta sin campo "prediction" numérico.');
+      return 'Predicción recibida: ' + data.prediction;
+    }
+  },
+  {
+    id: 'summary', group: 'backend', name: 'Resumen de contexto (GET /api/v1/context/summary)',
+    detail: 'Usado en Reportes.',
+    run: async () => {
+      const r = await fetch(`${ML_API_BASE}/api/v1/context/summary`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      return 'OK · ' + Object.keys(data || {}).length + ' campos recibidos.';
+    }
+  },
+  {
+    id: 'records', group: 'backend', name: 'Registros de contexto (GET /api/v1/context/records)',
+    detail: 'Usado en Historial y Reportes (exportar CSV/JSON).',
+    run: async () => {
+      const r = await fetch(`${ML_API_BASE}/api/v1/context/records?limit=5`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const arr = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+      if (!arr.length) return 'Respondió OK pero sin registros (0 filas).';
+      return `OK · ${arr.length} registros recibidos (de ${data?.total_records ?? '?'} totales).`;
+    }
+  },
+  {
+    id: 'auth', group: 'supabase', name: 'Conexión a Supabase Auth',
+    detail: 'Usado en todas las páginas para validar sesión y en Login/Registro.',
+    run: async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return data.session ? 'Conectado. Sesión activa: ' + data.session.user.email : 'Conectado. No hay sesión activa (normal si no iniciaste sesión en este navegador).';
+    }
+  },
+  {
+    id: 'user_settings', group: 'supabase', name: 'Tabla "user_settings" existe',
+    detail: 'Necesaria para que Configuración pueda guardar y para que Monitoreo/Dashboard lean los umbrales.',
+    run: async () => {
+      const { error } = await supabase.from('user_settings').select('user_id').limit(1);
+      if (error) {
+        if (error.code === '42P01' || /does not exist/i.test(error.message)) {
+          throw new Error('La tabla no existe todavía. Ejecuta supabase_setup.sql en el SQL Editor de Supabase.');
+        }
+        throw error;
+      }
+      return 'La tabla existe y responde correctamente.';
+    }
+  },
+  {
+    id: 'reportes_generados', group: 'supabase', name: 'Tabla "reportes_generados" existe',
+    detail: 'Necesaria para el historial real en Reportes y el contador en Perfil.',
+    run: async () => {
+      const { error } = await supabase.from('reportes_generados').select('id').limit(1);
+      if (error) {
+        if (error.code === '42P01' || /does not exist/i.test(error.message)) {
+          throw new Error('La tabla no existe todavía. Ejecuta supabase_setup.sql en el SQL Editor de Supabase.');
+        }
+        throw error;
+      }
+      return 'La tabla existe y responde correctamente.';
+    }
+  }
+];
+
+function crearFilas() {
+  tests.forEach(t => {
+    const grid = document.getElementById(t.group === 'backend' ? 'grid-backend' : 'grid-supabase');
+    const row = document.createElement('div');
+    row.className = 'test';
+    row.id = 'row-' + t.id;
+    row.innerHTML = `
+      <div class="left">
+        <div class="name">${t.name}</div>
+        <div class="detail" id="detail-${t.id}">${t.detail}</div>
+      </div>
+      <span class="badge pending" id="badge-${t.id}">Pendiente</span>
+    `;
+    grid.appendChild(row);
+  });
+}
+
+function setBadge(id, estado, texto) {
+  const b = document.getElementById('badge-' + id);
+  b.className = 'badge ' + estado;
+  b.textContent = texto;
+}
+
+async function ejecutarTodo() {
+  const btn = document.getElementById('btnRun');
+  btn.disabled = true;
+  btn.textContent = '⏳ Ejecutando...';
+  let ok = 0, fail = 0;
+
+  for (const t of tests) {
+    setBadge(t.id, 'running', 'Probando...');
+    try {
+      const msg = await t.run();
+      document.getElementById('detail-' + t.id).textContent = msg;
+      setBadge(t.id, 'ok', '✅ OK');
+      ok++;
+    } catch (err) {
+      document.getElementById('detail-' + t.id).textContent = '❌ ' + err.message;
+      setBadge(t.id, 'fail', '❌ Falla');
+      fail++;
+    }
+  }
+
+  const resumen = document.getElementById('resumen');
+  resumen.style.display = 'block';
+  resumen.innerHTML = fail === 0
+    ? `✅ <strong>${ok}/${tests.length} pruebas pasaron.</strong> Todo el sistema (backend + Supabase) responde correctamente.`
+    : `⚠️ <strong>${ok}/${tests.length} pruebas pasaron, ${fail} fallaron.</strong> Revisa los detalles en rojo arriba.`;
+
+  btn.disabled = false;
+  btn.textContent = '▶️ Ejecutar todas las pruebas';
+}
+
+crearFilas();
+document.getElementById('btnRun').addEventListener('click', ejecutarTodo);
+</script>
+</body>
+</html>
