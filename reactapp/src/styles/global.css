@@ -1,0 +1,45 @@
+:root {
+  --bg-primary: #0a0a1a;
+  --bg-secondary: #111827;
+  --bg-card: rgba(30, 27, 75, 0.6);
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+  --accent: #8B5CF6;
+  --accent-hover: #7C3AED;
+  --border-color: rgba(139, 92, 246, 0.2);
+  --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
+  --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
+  --card-bg: rgba(30, 27, 75, 0.5);
+  --sidebar-bg: rgba(0, 0, 0, 0.6);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  min-height: 100vh;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--gradient-main);
+  color: var(--text-primary);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 30px;
+}
+
+a {
+  color: inherit;
+}
