@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PredictiveBES · Acceso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(30, 27, 75, 0.6);
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            --accent: #8B5CF6;
+            --accent-hover: #7C3AED;
+            --border-color: rgba(139, 92, 246, 0.2);
+            --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.15);
+            --gradient-main: linear-gradient(135deg, #000000 0%, #1E1B4B 100%);
+            --input-bg: rgba(255,255,255,0.05);
+            --card-bg: rgba(30, 27, 75, 0.5);
+            --google-color: #EA4335;
+            --google-hover: #D33426;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--gradient-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 30px; }
+
+        .login-wrapper {
+            display: flex;
+            max-width: 1000px;
+            width: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-glow);
+            min-height: 550px;
+        }
+
+        .login-info {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 48px 36px;
+            width: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid var(--border-color);
+        }
+        .login-info .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .login-info .logo .icon {
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        .login-info .logo h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .login-info .logo h2 span { color: var(--accent); }
+        .login-info p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .login-info .badge-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .login-info .badge-list .badge {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid var(--border-color);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .login-info .footer-info {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            opacity: 0.6;
+            margin-top: 20px;
+        }
+
+        .login-form-area {
+            width: 60%;
+            padding: 48px 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-form-area h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .login-form-area .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 28px;
+            background: rgba(255,255,255,0.05);
+            padding: 4px;
+            border-radius: 60px;
+            border: 1px solid var(--border-color);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 60px;
+            background: transparent;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+        .tab-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .form-container { display: none; }
+        .form-container.active { display: block; }
+
+        .input-group {
+            margin-bottom: 18px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 60px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+        .input-group input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            font-family: inherit;
+        }
+        .login-btn:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+            transform: translateY(-2px);
+        }
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .google-btn {
+            width: 100%;
+            background: white;
+            border: none;
+            padding: 14px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1a1a2e;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .google-btn:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+        }
+        .google-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 16px 0 8px 0;
+        }
+        .divider .line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        .divider .text {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 12px;
+            min-height: 28px;
+        }
+        .success-message {
+            color: #22C55E;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 12px;
+            min-height: 28px;
+        }
+
+        .demo-creds {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .demo-creds:hover {
+            background: rgba(139, 92, 246, 0.1);
+        }
+        .demo-creds strong {
+            color: var(--accent);
+        }
+        .demo-creds .creds {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .demo-creds .creds span {
+            font-family: monospace;
+            color: var(--text-primary);
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 16px;
+        }
+        .back-link a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .back-link a:hover {
+            color: var(--accent);
+        }
+
+        @media (max-width: 780px) {
+            .login-wrapper { flex-direction: column; border-radius: 32px; }
+            .login-info { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); padding: 32px 24px; }
+            .login-form-area { width: 100%; padding: 32px 24px; }
+        }
+        @media (max-width: 480px) {
+            .login-form-area { padding: 24px 16px; }
+            .login-info { padding: 24px 16px; }
+            .tabs { flex-direction: column; border-radius: 16px; }
+            .tab-btn { border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <!-- ===== PANEL IZQUIERDO ===== -->
+    <div class="login-info">
+        <div>
+            <div class="logo">
+                <div class="icon">🔬</div>
+                <h2>Predictive<span>BES</span></h2>
+            </div>
+            <p>Plataforma de inteligencia predictiva para sistemas de Bombeo Electro Sumergible (BES) con IA.</p>
+            <div class="badge-list">
+                <span class="badge">35 variables</span>
+                <span class="badge">LSTM</span>
+                <span class="badge">Random Forest</span>
+                <span class="badge">XGBoost</span>
+                <span class="badge">96.4% precisión</span>
+            </div>
+        </div>
+        <div class="footer-info">
+            <i class="fas fa-shield-alt"></i> Datos seguros en la nube
+        </div>
+    </div>
+
+    <!-- ===== PANEL DERECHO ===== -->
+    <div class="login-form-area">
+        <h3>🔐 Acceso al sistema</h3>
+        <p class="subtitle">Ingresa o regístrate para comenzar</p>
+
+        <!-- ===== TABS ===== -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tabLogin">Iniciar sesión</button>
+            <button class="tab-btn" id="tabRegister">Registrarse</button>
+        </div>
+
+        <!-- ===== LOGIN ===== -->
+        <div class="form-container active" id="login-tab">
+            <form id="loginForm">
+                <div class="input-group">
+                    <label>📧 Correo electrónico</label>
+                    <input type="email" id="loginEmail" placeholder="demo@predictivebes.com" required>
+                </div>
+                <div class="input-group">
+                    <label>🔒 Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Ingresar al sistema
+                </button>
+                <div class="error-message" id="loginError"></div>
+                <div class="success-message" id="loginSuccess"></div>
+            </form>
+
+            <div class="divider">
+                <span class="line"></span>
+                <span class="text">O continúa con</span>
+                <span class="line"></span>
+            </div>
+
+            <button class="google-btn" id="googleBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Iniciar sesión con Google
+            </button>
+            <div class="error-message" id="googleError"></div>
+        </div>
+
+        <!-- ===== REGISTRO ===== -->
+        <div class="form-container" id="register-tab">
+            <form id="registerForm">
+                <div class="input-group">
+                    <label>📧 Correo electrónico</label>
+                    <input type="email" id="registerEmail" placeholder="operador@empresa.com" required>
+                </div>
+                <div class="input-group">
+                    <label>🔒 Contraseña (mínimo 6 caracteres)</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••" minlength="6" required>
+                </div>
+                <div class="input-group">
+                    <label>🔒 Confirmar contraseña</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="login-btn" id="registerBtn">
+                    <i class="fas fa-user-plus"></i> Crear cuenta
+                </button>
+                <div class="error-message" id="registerError"></div>
+                <div class="success-message" id="registerSuccess"></div>
+            </form>
+        </div>
+
+        <!-- ===== DEMO ===== -->
+        <div class="demo-creds" id="demoBox" title="Haz clic para autocompletar credenciales">
+            🧪 <strong>Cuenta de demostración (clic para usar)</strong>
+            <div class="creds">
+                <span>📧 demo@predictivebes.com</span>
+                <span>🔐 bes2025</span>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="index.html"><i class="fas fa-arrow-left"></i> Volver a la landing page</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 1. INICIALIZACIÓN DE SUPABASE
+    // ============================================================
+    const SUPABASE_URL = 'https://qkpkmgmidffdqaqwfiho.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_IfsgsenpGA1BM5_aMkMrfQ_BtoQN8Ke';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    console.log('🔐 Sistema de autenticación inicializado');
+    console.log('📡 Conectado a Supabase:', SUPABASE_URL);
+
+    // ============================================================
+    // 2. VERIFICAR SESIÓN AL CARGAR LA PÁGINA
+    // ============================================================
+    async function verificarEstadoInicial() {
+        try {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            
+            if (session) {
+                console.log("✅ Sesión activa detectada, redirigiendo...");
+                window.location.href = 'dashboard.html';
+            } else {
+                console.log("🔒 No hay sesión activa al cargar la página");
+            }
+        } catch (error) {
+            console.error("❌ Error al verificar sesión:", error);
+        }
+    }
+
+    verificarEstadoInicial();
+
+    // ============================================================
+    // 3. ESCUCHADOR DE CAMBIOS DE ESTADO
+    // ============================================================
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        console.log("📡 Evento de autenticación:", event, session);
+
+        if (event === 'SIGNED_IN' && session) {
+            console.log("✅ Sesión iniciada, redirigiendo...");
+            window.location.href = 'dashboard.html';
+        }
+    });
+
+    // ============================================================
+    // 4. INICIO DE SESIÓN CON CORREO Y CONTRASEÑA
+    // ============================================================
+    const loginForm = document.getElementById('loginForm');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginError = document.getElementById('loginError');
+    const loginSuccess = document.getElementById('loginSuccess');
+    const loginBtn = document.getElementById('loginBtn');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+
+        loginError.textContent = '';
+        loginSuccess.textContent = '';
+
+        if (!email || !password) {
+            loginError.textContent = '⚠️ Complete ambos campos.';
+            return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '⏳ Validando...';
+
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password,
+        });
+
+        if (error) {
+            loginError.textContent = '❌ Correo o contraseña incorrectos. Intente de nuevo.';
+            console.error('Error tradicional:', error.message);
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingresar al sistema';
+        } else {
+            loginSuccess.textContent = '✅ ¡Bienvenido! Redirigiendo...';
+        }
+    });
+
+    // ============================================================
+    // 5. INICIO DE SESIÓN CON GOOGLE (CON DIAGNÓSTICO)
+    // ============================================================
+    const googleBtn = document.getElementById('googleBtn');
+    const googleError = document.getElementById('googleError');
+
+    // Verificar si el botón existe
+    if (googleBtn) {
+        console.log("✅ Botón de Google encontrado en el DOM");
+    } else {
+        console.error("❌ Botón de Google NO encontrado en el DOM");
+    }
+
+    googleBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        console.log("🔄 Intentando conectar con Google...");
+
+        googleError.textContent = '';
+        googleBtn.disabled = true;
+        googleBtn.innerHTML = '⏳ Conectando con Google...';
+
+        try {
+            console.log("📤 Enviando solicitud a Supabase...");
+
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/dashboard.html'
+                }
+            });
+
+            if (error) {
+                console.error("❌ Error OAuth:", error.message);
+                googleError.textContent = '❌ Hubo un problema al conectar con Google: ' + error.message;
+                googleBtn.disabled = false;
+                googleBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    </svg>
+                    Iniciar sesión con Google
+                `;
+                return;
+            }
+
+            if (data) {
+                console.log("✅ Solicitud a Google exitosa, redirigiendo...");
+                // La redirección a Google ocurre automáticamente
+                // Al volver, verificarEstadoInicial() detectará la sesión
+            }
+
+        } catch (err) {
+            console.error("❌ Error inesperado:", err);
+            googleError.textContent = '❌ Error: ' + err.message;
+            googleBtn.disabled = false;
+            googleBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Iniciar sesión con Google
+            `;
+        }
+    });
+
+    // ============================================================
+    // 6. REGISTRO DE USUARIO
+    // ============================================================
+    const registerForm = document.getElementById('registerForm');
+    const registerEmail = document.getElementById('registerEmail');
+    const registerPassword = document.getElementById('registerPassword');
+    const registerPasswordConfirm = document.getElementById('registerPasswordConfirm');
+    const registerError = document.getElementById('registerError');
+    const registerSuccess = document.getElementById('registerSuccess');
+    const registerBtn = document.getElementById('registerBtn');
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = registerEmail.value.trim();
+        const password = registerPassword.value;
+        const confirm = registerPasswordConfirm.value;
+
+        registerError.textContent = '';
+        registerSuccess.textContent = '';
+
+        if (!email || !password || !confirm) {
+            registerError.textContent = '⚠️ Complete todos los campos.';
+            return;
+        }
+        if (!email.includes('@')) {
+            registerError.textContent = '⚠️ Ingrese un correo válido.';
+            return;
+        }
+        if (password.length < 6) {
+            registerError.textContent = '⚠️ La contraseña debe tener al menos 6 caracteres.';
+            return;
+        }
+        if (password !== confirm) {
+            registerError.textContent = '⚠️ Las contraseñas no coinciden.';
+            return;
+        }
+
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = '⏳ Registrando...';
+
+        try {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: { data: { role: 'operador' } }
+            });
+
+            if (error) {
+                if (error.message.includes('User already registered')) {
+                    registerError.textContent = '❌ Este correo ya está registrado. Usa otro o inicia sesión.';
+                } else {
+                    registerError.textContent = '❌ ' + error.message;
+                }
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = 'Crear cuenta';
+                return;
+            }
+
+            if (data.user) {
+                registerSuccess.textContent = '✅ ¡Cuenta creada! Ahora inicia sesión.';
+                registerEmail.value = '';
+                registerPassword.value = '';
+                registerPasswordConfirm.value = '';
+
+                setTimeout(() => {
+                    document.getElementById('tabLogin').click();
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginPassword').value = '';
+                }, 1500);
+            }
+
+        } catch (err) {
+            registerError.textContent = '❌ Error: ' + err.message;
+        } finally {
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = 'Crear cuenta';
+        }
+    });
+
+    // ============================================================
+    // 7. CAMBIO DE TABS
+    // ============================================================
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const loginTab = document.getElementById('login-tab');
+    const registerTab = document.getElementById('register-tab');
+
+    function cambiarTab(tab) {
+        tabLogin.classList.remove('active');
+        tabRegister.classList.remove('active');
+        loginTab.classList.remove('active');
+        registerTab.classList.remove('active');
+
+        if (tab === 'login') {
+            tabLogin.classList.add('active');
+            loginTab.classList.add('active');
+        } else {
+            tabRegister.classList.add('active');
+            registerTab.classList.add('active');
+        }
+
+        loginError.textContent = '';
+        loginSuccess.textContent = '';
+        registerError.textContent = '';
+        registerSuccess.textContent = '';
+        googleError.textContent = '';
+    }
+
+    tabLogin.addEventListener('click', () => cambiarTab('login'));
+    tabRegister.addEventListener('click', () => cambiarTab('register'));
+
+    // ============================================================
+    // 8. AUTOCOMPLETAR DEMO
+    // ============================================================
+    const demoBox = document.getElementById('demoBox');
+    if (demoBox) {
+        demoBox.addEventListener('click', () => {
+            cambiarTab('login');
+            loginEmail.value = 'demo@predictivebes.com';
+            loginPassword.value = 'bes2025';
+        });
+    }
+
+    console.log('🔐 Sistema de autenticación listo.');
+    console.log('📋 Usa la cuenta demo: demo@predictivebes.com / bes2025');
+</script>
+
+</body>
+</html>
