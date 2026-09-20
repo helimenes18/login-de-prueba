@@ -16,10 +16,7 @@ export default function Perfil() {
   const [msg, setMsg] = useState('');
 
   function guardar() {
-    if (!nombre.trim()) {
-      setMsg('⚠️ El nombre no puede estar vacío.');
-      return;
-    }
+    if (!nombre.trim()) return setMsg('⚠️ El nombre no puede estar vacío.');
     updateProfile({ name: nombre.trim() });
     setMsg('✅ Perfil actualizado.');
     setTimeout(() => setMsg(''), 2500);

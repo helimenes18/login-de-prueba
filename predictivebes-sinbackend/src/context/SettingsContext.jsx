@@ -15,14 +15,8 @@ const DEFAULTS = {
 };
 
 /**
- * AGREGADO: contexto global de configuración.
- * PARA QUÉ SIRVE: reemplaza la tabla "user_settings" de Supabase que se había
- * diseñado antes. Ahora los umbrales y el intervalo de actualización viven en un
- * solo lugar (React Context + localStorage) y CUALQUIER página los puede leer con
- * `useSettings()`. Por eso, si cambias el umbral de PIP en Configuración, la
- * pantalla de Monitoreo lo ve al instante sin necesidad de recargar ni de una base
- * de datos real. Cuando conectes un backend, solo hay que cambiar el "useEffect"
- * de más abajo para que guarde/lea de tu API en vez de localStorage.
+ * VERSIÓN SIN BACKEND NI SUPABASE: los umbrales y la config viven en
+ * localStorage, no en una tabla remota.
  */
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(() => {
@@ -38,12 +32,12 @@ export function SettingsProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  function updateSettings(partial) {
+  async function updateSettings(partial) {
     setSettings((prev) => ({ ...prev, ...partial }));
   }
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, cargado: true }}>
       {children}
     </SettingsContext.Provider>
   );

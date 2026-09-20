@@ -11,7 +11,6 @@ function cargarHistorial() {
     return [];
   }
 }
-
 function guardarHistorial(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
