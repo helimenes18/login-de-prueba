@@ -1,35 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Card from '../components/Card';
 import ToggleSwitch from '../components/ToggleSwitch';
 import { useSettings } from '../context/SettingsContext';
 
 export default function Configuracion() {
-  const { settings, updateSettings, cargado } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const [form, setForm] = useState(settings);
   const [guardado, setGuardado] = useState(false);
-  const [error, setError] = useState('');
-
-  // El SettingsContext carga los valores desde Supabase de forma asíncrona;
-  // cuando terminan de llegar, sincronizamos el formulario con lo real.
-  useEffect(() => {
-    if (cargado) setForm(settings);
-    // eslint-disable-next-line
-  }, [cargado]);
 
   function campo(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   function guardar() {
-    updateSettings(form)
-      .then(() => {
-        setGuardado(true);
-        setTimeout(() => setGuardado(false), 2000);
-      })
-      .catch((err) => {
-        setGuardado(false);
-        setError('❌ No se pudo guardar (¿existe la tabla "user_settings" en Supabase?): ' + err.message);
-      });
+    updateSettings(form);
+    setGuardado(true);
+    setTimeout(() => setGuardado(false), 2000);
   }
 
   return (
@@ -76,7 +62,6 @@ export default function Configuracion() {
           </div>
           <button className="btn-primary" onClick={guardar}>💾 Guardar configuración</button>
           {guardado && <p style={{ color: '#22C55E', fontSize: '0.8rem', marginTop: 8 }}>✅ Guardado. Se aplica en Monitoreo y Dashboard al instante.</p>}
-          {error && <p style={{ color: '#EF4444', fontSize: '0.75rem', marginTop: 8 }}>{error}</p>}
         </Card>
       </div>
     </div>

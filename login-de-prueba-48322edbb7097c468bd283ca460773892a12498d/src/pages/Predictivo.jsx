@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Card from '../components/Card';
 import { useSettings } from '../context/SettingsContext';
-import { generarLecturaSensores, predecirRiesgo, VARIABLES } from '../mock/mockData';
+import { generarLecturaSensores, predecirRiesgo } from '../mock/mockData';
 
 const NIVEL_COLOR = { Bajo: '#22C55E', Medio: '#F59E0B', Alto: '#EF4444' };
 
@@ -33,14 +33,10 @@ export default function Predictivo() {
           <p style={{ color: NIVEL_COLOR[resultado.riesgo.nivel], fontWeight: 600 }}>
             Riesgo {resultado.riesgo.nivel}
           </p>
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Modelo: {resultado.riesgo.algoritmo}</p>
           <table className="var-table" style={{ marginTop: 16 }}>
             <tbody>
-              {VARIABLES.map((v) => (
-                <tr key={v.key} title={v.nombreCompleto}>
-                  <td>{v.label}</td>
-                  <td>{resultado.lectura[v.key]} {v.unidad}</td>
-                </tr>
+              {Object.entries(resultado.lectura).map(([k, v]) => (
+                <tr key={k}><td>{k}</td><td>{v}</td></tr>
               ))}
             </tbody>
           </table>

@@ -31,10 +31,7 @@ export function generarLecturaSensores() {
   };
 }
 
-// Simula lo que antes respondía /api/v1/predict/single del backend en Render.
-// Según el Capítulo I, el modelo real debe basarse en Random Forest o redes LSTM;
-// acá se simula el resultado con esa misma forma (score + nivel + algoritmo usado)
-// para que, al reconectar el backend real, el resto del código no tenga que cambiar.
+// Simula lo que antes respondía /api/v1/predict/single del backend en Render
 export function predecirRiesgo(lectura, umbrales) {
   let score = 0;
   if (lectura.pip < umbrales.pipMin) score += 30;
@@ -48,7 +45,7 @@ export function predecirRiesgo(lectura, umbrales) {
   if (score > 70) nivel = 'Alto';
   else if (score > 35) nivel = 'Medio';
 
-  return { score, nivel, algoritmo: 'Random Forest (simulado)' };
+  return { score, nivel };
 }
 
 // Lista de pozos de ejemplo para el Mapa (antes hubiera sido una tabla "pozos")
@@ -75,28 +72,3 @@ export function generarRegistrosHistorial(n = 40) {
     timestamp: new Date(Date.now() - i * 3600 * 1000).toISOString(),
   }));
 }
-
-// AGREGADO: catálogo único de las 10 variables del BES (antes estaba repetido en
-// Monitoreo.jsx). "regla" define cuándo una variable se marca en alarma (rojo),
-// comparando contra los umbrales configurados en Configuración. Tanto la tabla de
-// Monitoreo como el esquema tipo SCADA (PozoEsquema.jsx) usan este mismo catálogo,
-// así que agregar o cambiar una variable se hace en un solo lugar.
-//
-// "nombreCompleto" usa la redacción textual del Capítulo I: "...la visualización
-// de las variables de presión en superficie y fondo: Presión en el Cabezal del
-// Revestidor (CHP), Temperatura de Descarga de la Bomba (PDT), Presión en el
-// Cabezal de la Tubería (THP), Presión en la Línea de Producción (PLP),
-// Temperatura en la Línea de Producción (TLP), la Presión de Entrada de la Bomba
-// (PIP) y la Presión de Descarga de la Bomba (PDP)".
-export const VARIABLES = [
-  { key: 'corriente', label: 'Corriente', nombreCompleto: 'Corriente eléctrica del motor', unidad: 'A', regla: (v, u) => v < u.corrienteMin },
-  { key: 'voltaje', label: 'Voltaje', nombreCompleto: 'Voltaje del motor', unidad: 'V' },
-  { key: 'chp', label: 'CHP', nombreCompleto: 'Presión en el Cabezal del Revestidor', unidad: 'psi' },
-  { key: 'thp', label: 'THP', nombreCompleto: 'Presión en el Cabezal de la Tubería', unidad: 'psi' },
-  { key: 'plp', label: 'PLP', nombreCompleto: 'Presión en la Línea de Producción', unidad: 'psi' },
-  { key: 'pip', label: 'PIP', nombreCompleto: 'Presión de Entrada de la Bomba', unidad: 'psi', regla: (v, u) => v < u.pipMin },
-  { key: 'pdp', label: 'PDP', nombreCompleto: 'Presión de Descarga de la Bomba', unidad: 'psi', regla: (v, u) => v > u.pdpMax },
-  { key: 'pdt', label: 'PDT', nombreCompleto: 'Temperatura de Descarga de la Bomba', unidad: '°F', regla: (v, u) => v > u.pdtMax },
-  { key: 'tlp', label: 'TLP', nombreCompleto: 'Temperatura en la Línea de Producción', unidad: '°F' },
-  { key: 'vibracion', label: 'Vibración', nombreCompleto: 'Vibración del motor', unidad: 'G', regla: (v) => v > 1.5 },
-];
