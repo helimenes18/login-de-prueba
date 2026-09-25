@@ -24,8 +24,13 @@ Abre `http://localhost:5173`.
 3. El archivo `vercel.json` ya incluye la regla necesaria para que las rutas internas
    (`/dashboard`, `/monitoreo`, etc.) no den error 404 al recargar la página o entrar directo por URL.
 
-No necesitas configurar nada más — las claves de Supabase y la URL del backend ML
-ya están en el código (igual que en la versión HTML original).
+Variables de entorno (opcionales, ver `.env.example`): `VITE_ML_API_BASE`, `VITE_SUPABASE_URL`,
+`VITE_SUPABASE_ANON_KEY` y, si se quiere mostrar el acceso de demostración en el login,
+`VITE_DEMO_EMAIL` y `VITE_DEMO_PASSWORD`. Sin ellas se usan los valores del proyecto y el botón
+de demostración queda oculto.
+
+Además, ejecutar una vez `supabase/seguridad.sql` en el SQL Editor de Supabase (políticas RLS,
+protección de la cuenta demo y roles en `app_metadata`).
 
 ## Estructura del proyecto
 
@@ -33,10 +38,16 @@ ya están en el código (igual que en la versión HTML original).
 src/
   lib/
     supabaseClient.js   → cliente único de Supabase (antes repetido en cada .html)
-    api.js              → toda la conexión con el backend ML (predict, context)
-    useSession.js        → hook de sesión + logout robusto, reutilizado en todas las páginas
+    api.js              → conexión con el backend ML (predict, context, model) con token de sesión
+    AppData.jsx         → estado compartido: configuración del usuario, lecturas de esp.csv
+                          reproducidas con sus predicciones y métricas del modelo
+    variables.js        → catálogo de las 34 variables, unidades, umbrales y niveles de riesgo
+    demo.js             → configuración de la cuenta de demostración
+    useSession.js        → hook de sesión (reacciona a cambios de autenticación) + logout
   components/
     Layout.jsx           → sidebar + navbar compartidos (antes copiados en cada .html)
+    LineChart.jsx        → gráfica SVG de tendencias (Monitoreo)
+    EstadoCarga.jsx      → aviso de conexión / reintento con la API
   pages/
     Landing.jsx          → antes index.html
     Login.jsx            → antes login.html
@@ -66,11 +77,15 @@ CSS estaba en el mismo documento global).
 - Las rutas son limpias (`/dashboard`, `/monitoreo`, etc.) en vez de `dashboard.html`,
   `monitoreo.html`. `vercel.json` se encarga de que funcionen al recargar o compartir el link.
 
-## Próximos pasos sugeridos (opcionales)
+## Correcciones del informe de pruebas (v1.1)
 
-- Reemplazar los `<div class="chart-placeholder">` de Monitoreo por gráficas reales
-  (por ejemplo con `recharts`, ya que el proyecto usa Vite y puede instalar cualquier
-  paquete de npm libremente).
-- Si el equipo crece, mover cada página a su propia carpeta con sub-componentes
-  (por ejemplo `pages/dashboard/StatCard.jsx`, `pages/dashboard/RiesgoIA.jsx`) para
-  ir troceando los archivos más grandes.
+- La interfaz envía a `/predict` las **34 variables** reales que exige el modelo y lee
+  `fail_probability` / `fail_prediction` (antes enviaba `feature_1..4` y leía `prediction`).
+- Monitoreo, Dashboard y Predictivo reproducen **lecturas reales de esp.csv** servidas por la API
+  (`/context/readings`) y evaluadas en un solo lote; se rotulan como reproducción, no "en vivo".
+- Los umbrales y el intervalo de Configuración se validan y **se aplican** en todos los módulos.
+- Historial y Reportes usan datos reales; los reportes filtran por tipo, escapan el CSV y conservan el 0.
+- Mapa calcula sus totales a partir de los pozos; la landing muestra las métricas reales del modelo.
+- Registro con confirmación de correo, rol desde `app_metadata`, cambio de contraseña con la
+  contraseña actual y cuenta demo protegida.
+- Menú lateral y menú de la landing corregidos en pantallas angostas.

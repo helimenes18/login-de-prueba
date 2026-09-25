@@ -171,6 +171,10 @@
   cursor: pointer;
 }
 
+.overlay {
+  display: none;
+}
+
 .content {
   padding: 28px 32px;
   flex: 1;
@@ -194,6 +198,13 @@
     width: 260px;
   }
   .sidebarOpen { transform: translateX(0); }
+  .overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+  }
   .mainContent { margin-left: 0; }
   .sidebarToggle { display: block; }
   .navbarTop { padding: 12px 16px; flex-wrap: wrap; }

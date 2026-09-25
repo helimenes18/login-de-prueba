@@ -1,73 +1,47 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { predecirFalla } from '../lib/api';
+import { useAppData } from '../lib/AppData';
+import {
+  VARIABLES_CLAVE, VARIABLES_POR_KEY, estadoVariable, formatearValor, nivelRiesgo, variablesFueraDeUmbral
+} from '../lib/variables';
+import LineChart from '../components/LineChart';
+import EstadoCarga from '../components/EstadoCarga';
 import styles from './Monitoreo.module.css';
 
-function randRange(min, max, decimals = 0) {
-  return +(Math.random() * (max - min) + min).toFixed(decimals);
-}
+const fmt = (key) => (v) => formatearValor(key, v);
 
 export default function Monitoreo() {
-  const [vars, setVars] = useState({
-    m1: '3.45 A', m2: '118.2 V', m3: '386 psi', m4: '215 psi', m5: '198 psi',
-    m6: '124 psi', m7: '1420 psi', m8: '187 °F', m9: '112 °F', m10: '0.82 G'
-  });
-  const [ultimaLectura, setUltimaLectura] = useState('hace 3s');
-
+  const { actual, historia, cfg, estado, error, reintentar, ultimaActualizacion, intervalo, umbral } = useAppData();
+  const [ahora, setAhora] = useState(Date.now());
   const [iaLoading, setIaLoading] = useState(false);
-  const [iaResultado, setIaResultado] = useState(null); // { pct, color, mensaje, pip, pdp, pdt, vib }
+  const [iaResultado, setIaResultado] = useState(null);
   const [iaError, setIaError] = useState('');
 
-  const actualizarMonitoreo = () => {
-    setVars({
-      m1: randRange(2.5, 4.5, 2) + ' A',
-      m2: randRange(115, 125, 1) + ' V',
-      m3: randRange(350, 450) + ' psi',
-      m4: randRange(190, 240) + ' psi',
-      m5: randRange(170, 220) + ' psi',
-      m6: randRange(100, 140) + ' psi',
-      m7: randRange(1300, 1500) + ' psi',
-      m8: randRange(170, 190) + ' °F',
-      m9: randRange(95, 125) + ' °F',
-      m10: randRange(0.5, 2, 2) + ' G'
-    });
-    setUltimaLectura('hace 3s');
-  };
-
-  const didInit = useRef(false);
   useEffect(() => {
-    if (didInit.current) return;
-    didInit.current = true;
-    actualizarMonitoreo();
-    const interval = setInterval(actualizarMonitoreo, 3000);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(id);
   }, []);
 
-  function extraerNumero(texto) {
-    const match = (texto || '').match(/-?\d+(\.\d+)?/);
-    return match ? parseFloat(match[0]) : 0;
-  }
+  const datos = historia.map((l) => l.values);
+  const fueraDeUmbral = variablesFueraDeUmbral(actual?.values, cfg);
+  const pred = actual?.prediccion;
+  const hayPeligro = fueraDeUmbral.some((v) => v.estado === 'danger') || pred?.prediccion === 1;
+  const hayAviso = fueraDeUmbral.length > 0 || (pred && pred.probabilidad >= umbral * 0.6);
+  const estadoPozo = hayPeligro
+    ? { clase: 'danger', texto: '🔴 Riesgo de falla' }
+    : hayAviso
+      ? { clase: 'warning', texto: '🟠 En observación' }
+      : { clase: 'ok', texto: '✅ Operando normal' };
+  const segundos = ultimaActualizacion ? Math.max(0, Math.round((ahora - ultimaActualizacion) / 1000)) : null;
 
   async function analizarConIA() {
+    if (!actual) return;
     setIaError('');
     setIaResultado(null);
     setIaLoading(true);
-
-    const pip = extraerNumero(vars.m6);
-    const pdp = extraerNumero(vars.m7);
-    const pdt = extraerNumero(vars.m8);
-    const vib = extraerNumero(vars.m10);
-
     try {
-      const data = await predecirFalla({ pip, pdp, pdt, vib });
-      const prob = Math.max(0, Math.min(1, Number(data.prediction)));
-      const pct = (prob * 100).toFixed(1);
-
-      let color, mensaje;
-      if (prob >= 0.7) { color = '#EF4444'; mensaje = '🔴 Riesgo alto de falla: se recomienda mantenimiento urgente.'; }
-      else if (prob >= 0.3) { color = '#F59E0B'; mensaje = '🟠 Riesgo moderado: monitorear de cerca.'; }
-      else { color = '#22C55E'; mensaje = '✅ Riesgo bajo: operación normal.'; }
-
-      setIaResultado({ pct, color, mensaje, pip, pdp, pdt, vib });
+      const p = await predecirFalla(actual.values);
+      setIaResultado({ ...p, riesgo: nivelRiesgo(p.probabilidad, p.umbral), recordId: actual.record_id });
     } catch (err) {
       console.error('Error consultando el modelo predictivo:', err);
       setIaError(err.message);
@@ -79,39 +53,46 @@ export default function Monitoreo() {
   return (
     <>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>📡 Monitoreo en tiempo real</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>📡 Monitoreo de telemetría</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Variables operativas de pozos BES · Actualización cada 3 segundos
+          Reproducción de lecturas reales de esp.csv · Actualización cada {intervalo} s (configurable)
         </p>
       </div>
+
+      <EstadoCarga estado={estado} error={error} onRetry={reintentar} />
 
       <div className={styles['monitor-grid']}>
         <div>
           <div className={styles['monitor-card']} style={{ marginBottom: 20 }}>
             <h3>
-              📊 Presiones
-              <span className={styles.status}><span className={styles.dot}></span> Actualizando</span>
+              📊 Presiones (psi)
+              <span className={styles.status}><span className={styles.dot}></span> Reproduciendo</span>
             </h3>
-            <div className={styles['chart-placeholder']}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem', marginBottom: 8 }}>📈</div>
-                <p>Gráfica de presiones</p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>CHP · THP · PLP · PIP · PDP</p>
-              </div>
-            </div>
+            <LineChart
+              data={datos}
+              series={[
+                { key: 'Intake_Pressure', label: 'PIP (succión)', color: '#60A5FA', formato: fmt('Intake_Pressure') },
+                { key: 'Discharge_Pressure', label: 'PDP (descarga)', color: '#A78BFA', formato: fmt('Discharge_Pressure') }
+              ]}
+              umbrales={[
+                { key: 'Intake_Pressure', valor: Number(cfg.pip_min), etiqueta: `PIP mín. ${cfg.pip_min}` },
+                { key: 'Discharge_Pressure', valor: Number(cfg.pdp_max), etiqueta: `PDP máx. ${cfg.pdp_max}` }
+              ]}
+            />
           </div>
           <div className={styles['monitor-card']}>
             <h3>
-              🌡️ Temperaturas
-              <span className={styles.status}><span className={styles.dot}></span> Actualizando</span>
+              🌡️ Temperaturas (°F)
+              <span className={styles.status}><span className={styles.dot}></span> Reproduciendo</span>
             </h3>
-            <div className={styles['chart-placeholder']}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '2rem', marginBottom: 8 }}>🌡️</div>
-                <p>Gráfica de temperaturas</p>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>PDT · TLP</p>
-              </div>
-            </div>
+            <LineChart
+              data={datos}
+              series={[
+                { key: 'Motor_Winding_Temp', label: 'Bobinado del motor', color: '#F87171', formato: fmt('Motor_Winding_Temp') },
+                { key: 'ESP_Temperature', label: 'ESP', color: '#FBBF24', formato: fmt('ESP_Temperature') }
+              ]}
+              umbrales={[{ key: 'Motor_Winding_Temp', valor: Number(cfg.pdt_max), etiqueta: `Máx. ${cfg.pdt_max} °F` }]}
+            />
           </div>
         </div>
 
@@ -119,25 +100,35 @@ export default function Monitoreo() {
           <div className={styles['monitor-card']}>
             <h3>⚡ Variables críticas</h3>
             <div className={styles['vars-list']}>
-              <div className={styles['var-row']}><span className={styles.name}>⚡ Corriente</span><span className={`${styles.value} ${styles.normal}`}>{vars.m1}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>⚡ Voltaje</span><span className={`${styles.value} ${styles.normal}`}>{vars.m2}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>📊 CHP</span><span className={`${styles.value} ${styles.normal}`}>{vars.m3}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>📊 THP</span><span className={`${styles.value} ${styles.normal}`}>{vars.m4}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>📊 PLP</span><span className={`${styles.value} ${styles.normal}`}>{vars.m5}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>📊 PIP</span><span className={`${styles.value} ${styles.normal}`}>{vars.m6}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>📊 PDP</span><span className={`${styles.value} ${styles.normal}`}>{vars.m7}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>🌡️ PDT</span><span className={`${styles.value} ${styles.normal}`}>{vars.m8}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>🌡️ TLP</span><span className={`${styles.value} ${styles.normal}`}>{vars.m9}</span></div>
-              <div className={styles['var-row']}><span className={styles.name}>〰️ Vibración</span><span className={`${styles.value} ${styles.normal}`}>{vars.m10}</span></div>
+              {VARIABLES_CLAVE.map((key) => {
+                const valor = actual?.values?.[key];
+                return (
+                  <div className={styles['var-row']} key={key}>
+                    <span className={styles.name}>{VARIABLES_POR_KEY[key].label}</span>
+                    <span className={`${styles.value} ${styles[estadoVariable(key, valor, cfg)]}`}>{formatearValor(key, valor)}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           <div className={styles['monitor-card']} style={{ marginTop: 16 }}>
             <h3>📌 Estado del pozo</h3>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-              <div><span className={`${styles['status-badge']} ${styles.ok}`}>✅ Operando normal</span></div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Última lectura: {ultimaLectura}</div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
+              <span className={`${styles['status-badge']} ${styles[estadoPozo.clase]}`}>{estadoPozo.texto}</span>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                Lectura {actual?.record_id ?? '—'} · {segundos === null ? 'sin datos' : `hace ${segundos} s`}
+              </div>
             </div>
+            {fueraDeUmbral.length > 0 && (
+              <ul style={{ marginTop: 10, paddingLeft: 18, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {fueraDeUmbral.map((v) => (
+                  <li key={v.key}>
+                    {VARIABLES_POR_KEY[v.key].label}: {formatearValor(v.key, v.valor)} ({v.tipo === 'min' ? 'mín.' : 'máx.'} {formatearValor(v.key, v.limite)})
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className={styles['monitor-card']} style={{ marginTop: 16 }}>
@@ -146,11 +137,11 @@ export default function Monitoreo() {
               {iaLoading && <span style={{ fontSize: '0.7rem', fontWeight: 400, color: 'var(--text-secondary)' }}>⏳ consultando modelo...</span>}
             </h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-              Envía las lecturas actuales de PIP, PDP, PDT y Vibración al modelo predictivo.
+              Envía las 34 variables de la lectura actual al modelo predictivo.
             </p>
             <button
               onClick={analizarConIA}
-              disabled={iaLoading}
+              disabled={iaLoading || !actual}
               style={{
                 marginTop: 10, width: '100%', background: 'var(--accent)', border: 'none', padding: 10,
                 borderRadius: 12, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.85rem'
@@ -162,12 +153,12 @@ export default function Monitoreo() {
             {iaResultado && (
               <div style={{
                 marginTop: 12, padding: 12, borderRadius: 12, fontSize: '0.85rem',
-                background: iaResultado.color + '1A', border: `1px solid ${iaResultado.color}4D`, color: iaResultado.color
+                background: iaResultado.riesgo.color + '1A', border: `1px solid ${iaResultado.riesgo.color}4D`, color: iaResultado.riesgo.color
               }}>
-                <strong>Probabilidad de falla: {iaResultado.pct}%</strong><br />
-                {iaResultado.mensaje}<br />
+                <strong>Probabilidad de falla: {(iaResultado.probabilidad * 100).toFixed(1)}%</strong><br />
+                {iaResultado.riesgo.texto}<br />
                 <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                  Variables enviadas · PIP: {iaResultado.pip} · PDP: {iaResultado.pdp} · PDT: {iaResultado.pdt} · Vibración: {iaResultado.vib}
+                  Lectura {iaResultado.recordId} · umbral del modelo {Math.round(iaResultado.umbral * 100)} %
                 </span>
               </div>
             )}
