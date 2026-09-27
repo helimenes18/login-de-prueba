@@ -1,31 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
-import { obtenerRegistros } from '../lib/api';
+import { obtenerRegistros, obtenerResumen } from '../lib/api';
+import { useAppData } from '../lib/AppData';
 import styles from './Historial.module.css';
 
-function formatFecha(iso) {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
-}
-
 export default function Historial() {
+  const { umbral } = useAppData();
   const [registros, setRegistros] = useState([]);
   const [total, setTotal] = useState(0);
+  const [categorias, setCategorias] = useState([]);
   const [categoria, setCategoria] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actualizado, setActualizado] = useState(null);
 
   const cargarHistorial = async (category) => {
     setLoading(true);
     setError('');
     try {
-      const { registros: regs, total: tot } = await obtenerRegistros({ category, limit: 100 });
+      const { registros: regs, total: tot } = await obtenerRegistros({ category, limit: 1000 });
       setRegistros(regs);
       setTotal(tot);
+      setActualizado(new Date());
     } catch (err) {
       console.error('Error cargando historial:', err);
       setError(err.message);
@@ -37,20 +33,16 @@ export default function Historial() {
 
   useEffect(() => {
     cargarHistorial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // F-21: las categorías salen del resumen del backend, no de los registros filtrados.
+    obtenerResumen()
+      .then((r) => setCategorias(Array.isArray(r?.active_categories) ? r.active_categories : []))
+      .catch((err) => console.warn('No se pudo cargar el resumen:', err.message));
   }, []);
 
-  const categorias = useMemo(
-    () => [...new Set(registros.map((r) => r.category))].sort(),
-    [registros]
-  );
-
   const registrosFiltrados = useMemo(() => {
-    const texto = busqueda.toLowerCase();
+    const texto = busqueda.trim().toLowerCase();
     if (!texto) return registros;
-    return registros.filter((r) =>
-      `${formatFecha(r.timestamp)} ${r.record_id} ${r.category} ${r.value}`.toLowerCase().includes(texto)
-    );
+    return registros.filter((r) => `${r.record_id} ${r.row_number} ${r.category}`.toLowerCase().includes(texto));
   }, [registros, busqueda]);
 
   function handleCategoriaChange(e) {
@@ -62,14 +54,16 @@ export default function Historial() {
   return (
     <>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>📋 Historial de fallas</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Registro histórico de eventos y anomalías detectadas</p>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>📋 Historial de lecturas evaluadas</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          Lecturas reales de esp.csv (bloque de prueba) con su etiqueta real y la probabilidad de falla asignada por el modelo
+        </p>
       </div>
 
       <div className={styles.filters}>
         <input
           type="text"
-          placeholder="🔍 Buscar por ID o categoría..."
+          placeholder="🔍 Buscar por lectura, fila o categoría..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
@@ -77,11 +71,7 @@ export default function Historial() {
           <option value="">Todas las categorías</option>
           {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        <button
-          className={styles.btnRecargar}
-          disabled={loading}
-          onClick={() => cargarHistorial(categoria || undefined)}
-        >
+        <button className={styles.btnRecargar} disabled={loading} onClick={() => cargarHistorial(categoria || undefined)}>
           🔄 Recargar
         </button>
       </div>
@@ -92,33 +82,43 @@ export default function Historial() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>ID de registro</th>
-              <th>Categoría</th>
-              <th>Valor</th>
+              <th>Lectura</th>
+              <th>Fila en esp.csv</th>
+              <th>Etiqueta real</th>
+              <th>Probabilidad del modelo</th>
+              <th>Resultado</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 24 }}>⏳ Cargando registros desde el backend...</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 24 }}>⏳ Cargando registros desde el backend...</td></tr>
             )}
             {!loading && registrosFiltrados.length === 0 && (
-              <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 24 }}>No hay registros para mostrar.</td></tr>
+              <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 24 }}>No hay registros para mostrar.</td></tr>
             )}
-            {!loading && registrosFiltrados.map((r, i) => (
-              <tr key={r.record_id ?? i}>
-                <td>{formatFecha(r.timestamp)}</td>
-                <td>{r.record_id}</td>
-                <td>{r.category}</td>
-                <td>{r.value}</td>
-              </tr>
-            ))}
+            {!loading && registrosFiltrados.map((r) => {
+              const predijoFalla = r.value >= umbral;
+              const esFalla = r.category === 'FALLA';
+              const acierto = predijoFalla === esFalla;
+              return (
+                <tr key={r.record_id}>
+                  <td>{r.record_id}</td>
+                  <td>{r.row_number}</td>
+                  <td style={{ color: esFalla ? '#EF4444' : '#22C55E', fontWeight: 600 }}>{r.category}</td>
+                  <td>{(r.value * 100).toFixed(1)} %</td>
+                  <td style={{ color: acierto ? '#22C55E' : '#F59E0B' }}>
+                    {predijoFalla ? 'Alerta' : 'Sin alerta'} · {acierto ? 'coincide' : esFalla ? 'falla no detectada' : 'falsa alarma'}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
       <div className={styles['footer-table']}>
-        {!loading && !error && `Mostrando ${registrosFiltrados.length} de ${total} registros · Última actualización: hace unos segundos`}
+        {!loading && !error && actualizado &&
+          `Mostrando ${registrosFiltrados.length} de ${total} registros · Umbral ${Math.round(umbral * 100)} % · Actualizado a las ${actualizado.toLocaleTimeString('es-VE')}`}
       </div>
     </>
   );
