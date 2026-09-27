@@ -11,15 +11,15 @@ function estadoColor(valor, warnAt, dangerAt, invert) {
   return 'var(--status-ok)';
 }
 
-// Posiciones en porcentaje, calculadas sobre el viewBox "60 10 860 470" del SVG.
+// Posiciones en porcentaje, calculadas sobre el viewBox "60 10 860 570" del SVG.
 const READOUTS = [
-  { key: 'thp', label: 'THP', sublabel: 'Presión Cabezal de la Tubería', unit: 'psi', top: 8.5, left: 8.7, warnAt: 260, dangerAt: 285 },
-  { key: 'chp', label: 'CHP', sublabel: 'Presión Cabezal del Revestidor', unit: 'psi', top: 18, left: 4, warnAt: 380, dangerAt: 420 },
-  { key: 'plp', label: 'PLP', sublabel: 'Presión Línea de Producción', unit: 'psi', top: 17, left: 41.9, warnAt: 210, dangerAt: 235 },
-  { key: 'tlp', label: 'TLP', sublabel: 'Temp. Línea de Producción', unit: '°F', top: 17, left: 64, warnAt: 140, dangerAt: 152 },
-  { key: 'pdp', label: 'PDP', sublabel: 'Presión de Descarga de Bomba', unit: 'psi', top: 65, left: 20.4, warnAt: 1450, dangerAt: 1550 },
-  { key: 'pdt', label: 'PDT', sublabel: 'Temp. Descarga de Bomba', unit: '°F', top: 71, left: 4, warnAt: 195, dangerAt: 205 },
-  { key: 'pip', label: 'PIP', sublabel: 'Presión de Entrada de Bomba', unit: 'psi', top: 80, left: 20.4, warnAt: 100, dangerAt: 80, invert: true }
+  { key: 'thp', label: 'THP', sublabel: 'Presión Cabezal de la Tubería', unit: 'psi', top: 7, left: 8.7, warnAt: 260, dangerAt: 285 },
+  { key: 'chp', label: 'CHP', sublabel: 'Presión Cabezal del Revestidor', unit: 'psi', top: 14.8, left: 4, warnAt: 380, dangerAt: 420 },
+  { key: 'plp', label: 'PLP', sublabel: 'Presión Línea de Producción', unit: 'psi', top: 14, left: 41.9, warnAt: 210, dangerAt: 235 },
+  { key: 'tlp', label: 'TLP', sublabel: 'Temp. Línea de Producción', unit: '°F', top: 14, left: 64, warnAt: 140, dangerAt: 152 },
+  { key: 'pdp', label: 'PDP', sublabel: 'Presión de Descarga de Bomba', unit: 'psi', top: 53.6, left: 20.4, warnAt: 1450, dangerAt: 1550 },
+  { key: 'pdt', label: 'PDT', sublabel: 'Temp. Descarga de Bomba', unit: '°F', top: 58.6, left: 4, warnAt: 195, dangerAt: 205 },
+  { key: 'pip', label: 'PIP', sublabel: 'Presión de Entrada de Bomba', unit: 'psi', top: 66, left: 20.4, warnAt: 100, dangerAt: 80, invert: true }
 ];
 
 export default function EspDiagram({ lecturas }) {
@@ -35,7 +35,7 @@ export default function EspDiagram({ lecturas }) {
       </div>
 
       <div className={styles.canvas}>
-        <svg viewBox="60 10 860 470" preserveAspectRatio="xMidYMid meet" className={styles.svg}>
+        <svg viewBox="60 10 860 570" preserveAspectRatio="xMidYMid meet" className={styles.svg}>
           {/* Línea de producción (superficie) */}
           <line x1="150" y1="90" x2="770" y2="90" className={styles.pipe} />
           <polygon points="770,83 785,90 770,97" className={styles.pipeArrow} />
@@ -75,8 +75,22 @@ export default function EspDiagram({ lecturas }) {
           <line x1="148" y1="135" x2="148" y2="440" className={styles.casing} />
           <line x1="135" y1="138" x2="135" y2="420" className={styles.tubing} />
 
+          {/* Línea de nivel de suelo: marca dónde termina la superficie y empieza el pozo */}
+          <line x1="60" y1="135" x2="220" y2="135" className={styles.groundLine} />
+          <text x="225" y="139" className={styles.groundLabel}>NIVEL DEL SUELO</text>
+          <text x="98" y="128" className={styles.equipSub} textAnchor="middle">Superficie</text>
+          <text x="98" y="452" className={styles.equipSub} textAnchor="middle" style={{ opacity: 0.5 }}>▼ Subsuelo</text>
+
           {/* Cable de potencia bajando por el pozo hasta el motor */}
           <path d="M 128 138 L 128 420" className={styles.cableDown} />
+          <line x1="163" y1="160" x2="132" y2="160" className={styles.leaderLine} />
+          <text x="168" y="164" className={styles.calloutText}>Cable eléctrico</text>
+
+          <line x1="163" y1="230" x2="150" y2="230" className={styles.leaderLine} />
+          <text x="168" y="234" className={styles.calloutText}>Tubería (producción)</text>
+
+          <line x1="163" y1="255" x2="123" y2="255" className={styles.leaderLine} />
+          <text x="168" y="259" className={styles.calloutText}>Revestidor (casing)</text>
 
           {/* Ensamble ESP en el fondo del pozo */}
           <g>
@@ -89,6 +103,13 @@ export default function EspDiagram({ lecturas }) {
             <text x="135" y="422" className={styles.motorText}>M</text>
             <circle cx="152" cy="408" r="5" className={`${styles.statusDot} ${styles.pulse}`} />
           </g>
+          <line x1="170" y1="353" x2="163" y2="353" className={styles.leaderLine} />
+          <text x="176" y="349" className={styles.calloutText}>Bomba multietapa</text>
+          <text x="176" y="361" className={styles.calloutTextSub}>(cada óvalo = una etapa)</text>
+
+          <line x1="168" y1="408" x2="163" y2="408" className={styles.leaderLine} />
+          <text x="172" y="412" className={styles.calloutText}>Motor eléctrico</text>
+
           <text x="135" y="458" className={styles.equipLabel}>ENSAMBLE ESP</text>
           <text x="135" y="473" className={styles.equipSub}>Bomba · Motor · Cable</text>
 
@@ -105,6 +126,28 @@ export default function EspDiagram({ lecturas }) {
             <line x1="660" y1="356" x2="840" y2="356" className={styles.divider} />
             <text x="670" y="374" className={styles.infoRowLabel}>Frecuencia VSD</text>
             <text x="850" y="374" className={styles.infoRowValue} textAnchor="end">58 Hz</text>
+          </g>
+
+          {/* Leyenda: qué significa cada símbolo del diagrama */}
+          <g>
+            <rect x="640" y="400" width="220" height="150" rx="10" className={styles.infoPanelBody} />
+            <text x="750" y="426" className={styles.equipLabel}>LEYENDA</text>
+
+            <line x1="660" y1="446" x2="690" y2="446" className={styles.pipe} />
+            <text x="698" y="450" className={styles.legendText}>Línea de flujo (producción)</text>
+
+            <line x1="660" y1="468" x2="690" y2="468" className={styles.casing} />
+            <line x1="660" y1="468" x2="690" y2="468" transform="translate(0,4)" className={styles.casing} />
+            <text x="698" y="472" className={styles.legendText}>Revestidor / tubería del pozo</text>
+
+            <line x1="660" y1="490" x2="690" y2="490" className={styles.cableDown} />
+            <text x="698" y="494" className={styles.legendText}>Cable de potencia</text>
+
+            <ellipse cx="675" cy="512" rx="15" ry="5" className={styles.pumpStage} />
+            <text x="698" y="516" className={styles.legendText}>Etapa de bomba centrífuga</text>
+
+            <circle cx="675" cy="534" r="4" className={`${styles.statusDot} ${styles.pulse}`} />
+            <text x="698" y="538" className={styles.legendText}>Equipo operando</text>
           </g>
         </svg>
 

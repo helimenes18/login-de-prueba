@@ -1,11 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSession } from '../lib/useSession';
-<<<<<<< HEAD
 import { useTheme } from '../lib/useTheme';
-=======
-import { AppDataProvider } from '../lib/AppData';
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
 import styles from './Layout.module.css';
 
 const NAV_ITEMS = [
@@ -24,10 +20,10 @@ const NAV_ITEMS_SECUNDARIOS = [
 
 const TITULOS = {
   '/dashboard': ['Dashboard', '/ Resumen del sistema'],
-  '/monitoreo': ['Monitoreo', '/ Telemetría de esp.csv'],
+  '/monitoreo': ['Monitoreo', '/ Datos en tiempo real'],
   '/mapa': ['Mapa', '/ Ubicación de pozos BES'],
   '/predictivo': ['Predictivo', '/ Análisis con IA'],
-  '/historial': ['Historial', '/ Lecturas evaluadas'],
+  '/historial': ['Historial', '/ Registro de fallas'],
   '/reportes': ['Reportes', '/ Exportación de datos'],
   '/configuracion': ['Configuración', '/ Ajustes del sistema'],
   '/perfil': ['Perfil', '/ Mi cuenta']
@@ -35,45 +31,67 @@ const TITULOS = {
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-<<<<<<< HEAD
   const { email, checked, logout, loggingOut } = useSession();
   const { theme, toggleTheme } = useTheme();
-=======
-  const { user, email, checked, logout, loggingOut } = useSession();
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
   const location = useLocation();
   const [titulo, breadcrumb] = TITULOS[location.pathname] || ['PredictiveBES', ''];
-
-  // F-23: el menú lateral se cierra al cambiar de módulo.
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, [location.pathname]);
 
   if (!checked) {
     return null; // evita parpadeo mientras se verifica la sesión
   }
 
-  const renderItem = (item) => (
-    <NavLink
-      key={item.to}
-      to={item.to}
-      onClick={() => setSidebarOpen(false)}
-      className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-    >
-      <i className={`fas ${item.icon}`}></i> {item.label}
-    </NavLink>
-  );
-
   return (
-    <AppDataProvider userId={user?.id}>
-      <div className={styles.app}>
-        <nav className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
-          <div className={styles.logo}>
-            <div className={styles.logoIcon}>🔬</div>
-            <h2>Predictive<span>BES</span></h2>
-            <span className={styles.badge}>v1.1</span>
+    <div className={styles.app}>
+      <nav className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
+        <div className={styles.logo}>
+          <div className={styles.logoIcon}>🔬</div>
+          <h2>Predictive<span>BES</span></h2>
+          <span className={styles.badge}>v1.0</span>
+        </div>
+
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+          >
+            <i className={`fas ${item.icon}`}></i> {item.label}
+          </NavLink>
+        ))}
+
+        <hr className={styles.navDivider} />
+
+        {NAV_ITEMS_SECUNDARIOS.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+          >
+            <i className={`fas ${item.icon}`}></i> {item.label}
+          </NavLink>
+        ))}
+
+        <hr className={styles.navDivider} />
+
+        <div className={styles.navFooter}>
+          <p>© 2026 PredictiveBES</p>
+          <p style={{ fontSize: '0.55rem', opacity: 0.6 }}>BES Analytics · IA</p>
+        </div>
+      </nav>
+
+      <div className={styles.mainContent}>
+        <header className={styles.navbarTop}>
+          <div className={styles.navbarLeft}>
+            <button
+              className={styles.sidebarToggle}
+              type="button"
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
+              ☰
+            </button>
+            <h1>{titulo}</h1>
+            <span className={styles.breadcrumb}>{breadcrumb}</span>
           </div>
-<<<<<<< HEAD
           <div className={styles.navbarRight}>
             <button
               type="button"
@@ -86,54 +104,22 @@ export default function Layout() {
             <div className={styles.user}>
               <div className={styles.avatar}>{email.charAt(0).toUpperCase()}</div>
               <span>{email}</span>
-=======
-
-          {NAV_ITEMS.map(renderItem)}
-          <hr className={styles.navDivider} />
-          {NAV_ITEMS_SECUNDARIOS.map(renderItem)}
-          <hr className={styles.navDivider} />
-
-          <div className={styles.navFooter}>
-            <p>© 2026 PredictiveBES</p>
-            <p style={{ fontSize: '0.55rem', opacity: 0.6 }}>BES Analytics · IA</p>
-          </div>
-        </nav>
-
-        {sidebarOpen && (
-          <div className={styles.overlay} onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-        )}
-
-        <div className={styles.mainContent}>
-          <header className={styles.navbarTop}>
-            <div className={styles.navbarLeft}>
-              <button
-                className={styles.sidebarToggle}
-                type="button"
-                aria-label={sidebarOpen ? 'Cerrar menú' : 'Abrir menú'}
-                onClick={() => setSidebarOpen((v) => !v)}
-              >
-                ☰
-              </button>
-              <h1>{titulo}</h1>
-              <span className={styles.breadcrumb}>{breadcrumb}</span>
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
             </div>
-            <div className={styles.navbarRight}>
-              <div className={styles.user}>
-                <div className={styles.avatar}>{(email.charAt(0) || '?').toUpperCase()}</div>
-                <span>{email}</span>
-              </div>
-              <button className={styles.btnLogout} type="button" disabled={loggingOut} onClick={logout}>
-                {loggingOut ? 'Saliendo...' : 'Cerrar sesión'}
-              </button>
-            </div>
-          </header>
-
-          <div className={styles.content}>
-            <Outlet />
+            <button
+              className={styles.btnLogout}
+              type="button"
+              disabled={loggingOut}
+              onClick={logout}
+            >
+              {loggingOut ? 'Saliendo...' : 'Cerrar sesión'}
+            </button>
           </div>
+        </header>
+
+        <div className={styles.content}>
+          <Outlet />
         </div>
       </div>
-    </AppDataProvider>
+    </div>
   );
 }

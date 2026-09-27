@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react';
 import { generarLecturas, predecirFalla } from '../lib/api';
 import EspDiagram from '../components/EspDiagram';
@@ -6,30 +5,16 @@ import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
   const [lecturas, setLecturas] = useState(generarLecturas());
-=======
-import { useState } from 'react';
-import { predecirFalla } from '../lib/api';
-import { useAppData } from '../lib/AppData';
-import {
-  VARIABLES, VARIABLES_CLAVE, VARIABLES_POR_KEY, estadoVariable, formatearValor, nivelRiesgo, variablesFueraDeUmbral
-} from '../lib/variables';
-import EstadoCarga from '../components/EstadoCarga';
-import styles from './Dashboard.module.css';
 
-export default function Dashboard() {
-  const { actual, reproducidas, cfg, estado, error, reintentar, umbral, fuente } = useAppData();
-  const [reevaluando, setReevaluando] = useState(false);
-  const [prediccionManual, setPrediccionManual] = useState(null);
-  const [errorManual, setErrorManual] = useState('');
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
+  const [iaLoading, setIaLoading] = useState(false);
+  const [iaProb, setIaProb] = useState('—');
+  const [iaColor, setIaColor] = useState('#22C55E');
+  const [iaFillPct, setIaFillPct] = useState(0);
+  const [iaMensaje, setIaMensaje] = useState('Calculando...');
+  const [iaError, setIaError] = useState('');
+  const [alertasActivas, setAlertasActivas] = useState(0);
+  const [fallasDetectadas, setFallasDetectadas] = useState(0);
 
-  const prediccion = prediccionManual && actual && prediccionManual.recordId === actual.record_id ? prediccionManual.pred : actual?.prediccion;
-  const riesgo = prediccion ? nivelRiesgo(prediccion.probabilidad, prediccion.umbral ?? umbral) : null;
-  const fueraDeUmbral = variablesFueraDeUmbral(actual?.values, cfg);
-  const alertasActivas = fueraDeUmbral.filter((v) => v.estado === 'danger').length + (prediccion?.prediccion === 1 ? 1 : 0);
-  const fallasDetectadas = reproducidas.filter((l) => l.prediccion?.prediccion === 1).length;
-
-<<<<<<< HEAD
   const actualizarRiesgoIA = async (lecturasActuales) => {
     setIaError('');
     setIaLoading(true);
@@ -56,21 +41,14 @@ export default function Dashboard() {
         setAlertasActivas(0);
         setFallasDetectadas(0);
       }
-=======
-  async function reevaluar() {
-    if (!actual) return;
-    setReevaluando(true);
-    setErrorManual('');
-    try {
-      const pred = await predecirFalla(actual.values);
-      setPrediccionManual({ recordId: actual.record_id, pred });
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
     } catch (err) {
-      setErrorManual(err.message);
+      console.error('Error consultando el modelo predictivo:', err);
+      setIaError(err.message);
+      setIaProb('—');
+      setIaMensaje('Sin datos del modelo.');
     } finally {
-      setReevaluando(false);
+      setIaLoading(false);
     }
-<<<<<<< HEAD
   };
 
   const didInit = useRef(false);
@@ -85,83 +63,46 @@ export default function Dashboard() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-=======
-  }
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
 
   return (
     <>
-      <EstadoCarga estado={estado} error={error} onRetry={reintentar} />
-
       <div className={styles['stats-grid']}>
         <div className={styles['stat-card']}>
           <span className={styles.icon}><i className="fas fa-database"></i></span>
           <div className={styles.label}>Variables monitoreadas</div>
-<<<<<<< HEAD
           <div className={styles.value}>7</div>
           <span className={`${styles.change} ${styles.up}`}>↑ Activas</span>
-=======
-          <div className={styles.value}>{VARIABLES.length}</div>
-          <span className={`${styles.change} ${styles.up}`}>Entradas del modelo</span>
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
         </div>
         <div className={styles['stat-card']}>
           <span className={styles.icon}><i className="fas fa-check-circle"></i></span>
-          <div className={styles.label}>Lectura actual</div>
-          <div className={styles.value} style={{ fontSize: '1.3rem' }}>{actual?.record_id ?? '—'}</div>
-          <span className={`${styles.change} ${styles.up}`}>{reproducidas.length} lecturas reproducidas</span>
+          <div className={styles.label}>Equipos operando</div>
+          <div className={styles.value}>1</div>
+          <span className={`${styles.change} ${styles.up}`}>↑ 100% disponibilidad</span>
         </div>
         <div className={styles['stat-card']}>
           <span className={styles.icon}><i className="fas fa-exclamation-triangle"></i></span>
           <div className={styles.label}>Alertas activas</div>
           <div className={styles.value}>{alertasActivas}</div>
-          <span className={`${styles.change} ${alertasActivas ? styles.down : styles.up}`}>
-            {alertasActivas ? `${alertasActivas} alerta${alertasActivas > 1 ? 's' : ''} en la lectura actual` : 'Sin alertas'}
-          </span>
+          <span className={`${styles.change} ${styles.down}`}>↓ Sin alertas</span>
         </div>
         <div className={styles['stat-card']}>
           <span className={styles.icon}><i className="fas fa-times-circle"></i></span>
           <div className={styles.label}>Fallas detectadas</div>
           <div className={styles.value}>{fallasDetectadas}</div>
-          <span className={`${styles.change} ${fallasDetectadas ? styles.down : styles.up}`}>
-            predichas en {reproducidas.length} lecturas
-          </span>
+          <span className={`${styles.change} ${styles.down}`}>↓ {fallasDetectadas} fallas</span>
         </div>
       </div>
 
-<<<<<<< HEAD
       <EspDiagram lecturas={lecturas} />
-=======
-      <div className={styles['vars-section']}>
-        <div className={styles.header}>
-          <h3>📡 Variables operativas</h3>
-          <div className={styles.live}>
-            <span className={styles.dot}></span>
-            <span>REPRODUCCIÓN · {fuente || 'esp.csv'}</span>
-          </div>
-        </div>
-        <div className={styles['vars-grid']}>
-          {VARIABLES_CLAVE.map((key) => {
-            const valor = actual?.values?.[key];
-            return (
-              <div className={styles['var-item']} key={key}>
-                <span className={styles.name}>{VARIABLES_POR_KEY[key].label}</span>
-                <span className={`${styles.value} ${styles[estadoVariable(key, valor, cfg)]}`}>{formatearValor(key, valor)}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
 
       <div className={styles['welcome-box']}>
         <div>
           <h3>👋 Bienvenido al sistema predictivo</h3>
-          <p>Telemetría reproducida de esp.csv · Modelo Random Forest · Umbral de decisión {Math.round(umbral * 100)} %</p>
+          <p>Monitoreo en tiempo real · Detección temprana de fallas · IA para BES</p>
         </div>
         <div className={styles.status}>
           <span className={styles.dot}></span>
-          <span>{estado === 'listo' ? 'Sistema operativo' : estado === 'cargando' ? 'Conectando...' : 'Sin conexión con la API'}</span>
+          <span>Sistema operativo</span>
         </div>
       </div>
 
@@ -169,36 +110,33 @@ export default function Dashboard() {
         <div className={styles.header}>
           <h3>
             🧠 Riesgo de falla (IA){' '}
-            {reevaluando && <span style={{ fontSize: '0.7rem', fontWeight: 400, color: 'var(--text-secondary)' }}>⏳ consultando modelo...</span>}
+            {iaLoading && (
+              <span style={{ fontSize: '0.7rem', fontWeight: 400, color: 'var(--text-secondary)' }}>
+                ⏳ consultando modelo...
+              </span>
+            )}
           </h3>
           <button
-<<<<<<< HEAD
             onClick={() => actualizarRiesgoIA(lecturas)}
             disabled={iaLoading}
-=======
-            onClick={reevaluar}
-            disabled={reevaluando || !actual}
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
             style={{
               background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-secondary)',
               borderRadius: 30, padding: '4px 14px', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'inherit'
             }}
           >
-            🔄 Reevaluar lectura actual
+            🔄 Actualizar
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 700, color: riesgo?.color || 'var(--text-secondary)' }}>
-            {prediccion ? `${(prediccion.probabilidad * 100).toFixed(1)}%` : '—'}
-          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 700, color: iaColor }}>{iaProb}</div>
           <div style={{ flex: 1, minWidth: 160, height: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 30, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(prediccion?.probabilidad ?? 0) * 100}%`, background: riesgo?.color || 'transparent', borderRadius: 30, transition: 'width .3s' }}></div>
+            <div style={{ height: '100%', width: `${iaFillPct}%`, background: iaColor, borderRadius: 30, transition: 'width .3s' }}></div>
           </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{riesgo?.texto || 'Sin datos del modelo.'}</div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{iaMensaje}</div>
         </div>
-        {errorManual && (
+        {iaError && (
           <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, color: '#EF4444', fontSize: '0.8rem' }}>
-            {errorManual}
+            {iaError}
           </div>
         )}
       </div>

@@ -194,10 +194,6 @@
   cursor: pointer;
 }
 
-.overlay {
-  display: none;
-}
-
 .content {
   padding: 28px 32px;
   flex: 1;
@@ -224,18 +220,7 @@
     width: 260px;
   }
   .sidebarOpen { transform: translateX(0); }
-<<<<<<< HEAD
   .mainContent { margin-left: 0; width: 100%; }
-=======
-  .overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 90;
-  }
-  .mainContent { margin-left: 0; }
->>>>>>> be4d8a68fbd0508c8bf2895c4afa1299ddfb9963
   .sidebarToggle { display: block; }
   .navbarTop { padding: 12px 16px; flex-wrap: wrap; }
   .content { padding: 16px; }
