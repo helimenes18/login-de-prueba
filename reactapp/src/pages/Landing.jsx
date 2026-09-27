@@ -29,7 +29,7 @@ export default function Landing() {
       <nav className={styles.navbar} id="inicio">
         <div className={styles.logo}>
           <div className={styles.icon}>🔬</div>
-          <h1>Predictive<span>BES</span></h1>
+          <h1>Predicti<span>BES</span></h1>
           <span className={styles.badge}>AI v1.1</span>
         </div>
         <ul className={`${styles['nav-links']} ${menuAbierto ? styles['nav-links-open'] : ''}`}>
@@ -149,7 +149,7 @@ export default function Landing() {
       </section>
 
       <footer className={styles.footer}>
-        <p>© 2026 PredictiveBES · Desarrollado para la industria de hidrocarburos</p>
+        <p>© 2026 PredictiBES · Desarrollado para la industria de hidrocarburos</p>
         <div className={styles.social}>
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" aria-label="Repositorio en GitHub"><i className="fab fa-github"></i></a>
         </div>

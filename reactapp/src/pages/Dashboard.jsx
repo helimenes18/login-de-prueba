@@ -34,6 +34,17 @@ export default function Dashboard() {
 
   return (
     <>
+      <div className={styles['welcome-box']}>
+        <div>
+          <h3>👋 Bienvenido al sistema predictivo</h3>
+          <p>Telemetría reproducida de esp.csv · Modelo Random Forest · Umbral de decisión {Math.round(umbral * 100)} %</p>
+        </div>
+        <div className={styles.status}>
+          <span className={styles.dot}></span>
+          <span>{estado === 'listo' ? 'Sistema operativo' : estado === 'cargando' ? 'Conectando...' : 'Sin conexión con la API'}</span>
+        </div>
+      </div>
+
       <EstadoCarga estado={estado} error={error} onRetry={reintentar} />
 
       <div className={styles['stats-grid']}>
@@ -75,17 +86,6 @@ export default function Dashboard() {
         fuente={fuente}
         cargando={estado === 'cargando'}
       />
-
-      <div className={styles['welcome-box']}>
-        <div>
-          <h3>👋 Bienvenido al sistema predictivo</h3>
-          <p>Telemetría reproducida de esp.csv · Modelo Random Forest · Umbral de decisión {Math.round(umbral * 100)} %</p>
-        </div>
-        <div className={styles.status}>
-          <span className={styles.dot}></span>
-          <span>{estado === 'listo' ? 'Sistema operativo' : estado === 'cargando' ? 'Conectando...' : 'Sin conexión con la API'}</span>
-        </div>
-      </div>
 
       <div className={styles['vars-section']} style={{ marginTop: 24 }}>
         <div className={styles.header}>

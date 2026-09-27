@@ -16,6 +16,11 @@ function leerErrorDeUrl() {
 
 let pendiente = leerErrorDeUrl();
 
+/** Indica si hay un error de autenticación pendiente de mostrar, sin consumirlo. */
+export function hayErrorDeAutenticacion() {
+  return Boolean(pendiente);
+}
+
 /** Devuelve el error de autenticación recibido en la URL (una sola vez). */
 export function tomarErrorDeAutenticacion() {
   const error = pendiente;

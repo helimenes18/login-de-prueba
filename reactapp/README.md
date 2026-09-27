@@ -1,4 +1,4 @@
-# PredictiveBES · versión React
+# PredictiBES · versión React
 
 Migración del proyecto original (HTML + CSS + JS embebido) a **React 18 + Vite + react-router-dom**,
 manteniendo exactamente el mismo diseño visual y toda la funcionalidad ya conectada

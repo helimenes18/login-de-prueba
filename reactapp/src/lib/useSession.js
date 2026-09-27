@@ -1,45 +1,38 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { createContext, createElement, useCallback, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 
-export function useSession() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+const SessionContext = createContext(null);
+
+/**
+ * Única fuente de verdad de la sesión: se consulta una vez al arrancar y luego se sigue con
+ * onAuthStateChange (inicio de sesión, expiración, cierre en otra pestaña, cambio de usuario).
+ * Las rutas deciden a dónde ir según haya o no token (ver App.jsx).
+ */
+export function SessionProvider({ children }) {
+  const [session, setSession] = useState(null);
   const [checked, setChecked] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     let activo = true;
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!activo) return;
-        if (!session) {
-          navigate('/login', { replace: true });
-          return;
-        }
-        setUser(session.user);
-        setChecked(true);
-      } catch {
-        navigate('/login', { replace: true });
-      }
-    })();
 
-    // F-25: reaccionar si la sesión expira, se cierra en otra pestaña o cambia el usuario.
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.getSession()
+      .then(({ data }) => { if (activo) setSession(data?.session ?? null); })
+      .catch(() => { if (activo) setSession(null); })
+      .finally(() => { if (activo) setChecked(true); });
+
+    // No se llaman otras funciones de supabase dentro del callback (puede bloquear el cliente).
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nueva) => {
       if (!activo) return;
-      if (event === 'SIGNED_OUT' || !session) {
-        navigate('/login', { replace: true });
-        return;
-      }
-      setUser(session.user);
+      setSession(nueva ?? null);
+      setChecked(true);
     });
 
     return () => {
       activo = false;
       listener?.subscription?.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   const logout = useCallback(async () => {
     setLoggingOut(true);
@@ -57,9 +50,18 @@ export function useSession() {
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith('sb-') || key === 'bes_user') localStorage.removeItem(key);
       });
-      navigate('/login', { replace: true });
+      setSession(null);
+      setLoggingOut(false);
     }
-  }, [navigate]);
+  }, []);
 
-  return { user, email: user?.email || '', checked, logout, loggingOut };
+  const user = session?.user ?? null;
+  const value = { session, user, email: user?.email || '', checked, logout, loggingOut };
+  return createElement(SessionContext.Provider, { value }, children);
+}
+
+export function useSession() {
+  const ctx = useContext(SessionContext);
+  if (!ctx) throw new Error('useSession debe usarse dentro de <SessionProvider>.');
+  return ctx;
 }

@@ -32,19 +32,15 @@ const TITULOS = {
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, email, checked, logout, loggingOut } = useSession();
+  const { user, email, logout, loggingOut } = useSession();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
-  const [titulo, breadcrumb] = TITULOS[location.pathname] || ['PredictiveBES', ''];
+  const [titulo, breadcrumb] = TITULOS[location.pathname] || ['PredictiBES', ''];
 
   // F-23: el menú lateral se cierra al cambiar de módulo.
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
-
-  if (!checked) {
-    return null; // evita parpadeo mientras se verifica la sesión
-  }
 
   const renderItem = (item) => (
     <NavLink
@@ -63,7 +59,7 @@ export default function Layout() {
         <nav className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarOpen : ''}`}>
           <div className={styles.logo}>
             <div className={styles.logoIcon}>🔬</div>
-            <h2>Predictive<span>BES</span></h2>
+            <h2>Predicti<span>BES</span></h2>
             <span className={styles.badge}>v1.1</span>
           </div>
 
@@ -73,7 +69,7 @@ export default function Layout() {
           <hr className={styles.navDivider} />
 
           <div className={styles.navFooter}>
-            <p>© 2026 PredictiveBES</p>
+            <p>© 2026 PredictiBES</p>
             <p style={{ fontSize: '0.55rem', opacity: 0.6 }}>BES Analytics · IA</p>
           </div>
         </nav>

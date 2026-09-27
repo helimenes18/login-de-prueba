@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { tomarErrorDeAutenticacion } from '../lib/authError';
+import { origenDeRetorno } from '../lib/sitio';
 import { DEMO_EMAIL, DEMO_PASSWORD, MOSTRAR_DEMO } from '../lib/demo';
 import styles from './Login.module.css';
 
@@ -37,7 +38,6 @@ function mensajeErrorGoogle(descripcion) {
 }
 
 export default function Login() {
-  const navigate = useNavigate();
   const [tab, setTab] = useState('login');
 
   // --- login ---
@@ -69,32 +69,6 @@ export default function Login() {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, []);
-
-  // Verifica sesión al cargar; si ya hay una, redirige al dashboard.
-  useEffect(() => {
-    let activo = true;
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (activo && session) {
-          navigate('/dashboard', { replace: true });
-        }
-      } catch (error) {
-        console.error('❌ Error al verificar sesión:', error);
-      }
-    })();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        navigate('/dashboard', { replace: true });
-      }
-    });
-
-    return () => {
-      activo = false;
-      listener?.subscription?.unsubscribe();
-    };
-  }, [navigate]);
 
   function limpiarMensajes() {
     setLoginError(''); setLoginSuccess('');
@@ -131,7 +105,7 @@ export default function Login() {
       setLoginLoading(false);
     } else {
       setLoginSuccess('✅ ¡Bienvenido! Redirigiendo...');
-      // El listener onAuthStateChange se encarga de la redirección.
+      // Al haber token, la ruta redirige sola al dashboard (ver App.jsx).
     }
   }
 
@@ -141,7 +115,7 @@ export default function Login() {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + '/dashboard' }
+        options: { redirectTo: origenDeRetorno() + '/dashboard' }
       });
       if (error) {
         console.error('❌ Error OAuth:', error.message);
@@ -186,7 +160,7 @@ export default function Login() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password: regPassword,
-        options: { emailRedirectTo: window.location.origin + '/login' }
+        options: { emailRedirectTo: origenDeRetorno() + '/login' }
       });
 
       if (error) {
@@ -227,7 +201,7 @@ export default function Login() {
         <div>
           <div className={styles.logo}>
             <div className={styles.icon}>🔬</div>
-            <h2>Predictive<span>BES</span></h2>
+            <h2>Predicti<span>BES</span></h2>
           </div>
           <p>Plataforma de inteligencia predictiva para sistemas de Bombeo Electro Sumergible (BES) con IA.</p>
           <div className={styles['badge-list']}>

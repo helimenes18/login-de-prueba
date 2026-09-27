@@ -135,6 +135,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  margin-bottom: 24px;
 }
 .welcome-box h3 { font-size: 1rem; }
 .welcome-box p { color: var(--text-secondary); font-size: 0.85rem; }

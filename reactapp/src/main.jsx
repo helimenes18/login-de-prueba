@@ -1,3 +1,5 @@
+// Debe cargarse antes que la app: fuerza el dominio propio (predictibes.me).
+import { redirigiendoAlDominio } from './lib/sitio';
 // Debe cargarse antes que la app: captura el error de OAuth que llega en la URL.
 import './lib/authError';
 import React from 'react';
@@ -8,8 +10,10 @@ import { aplicarTemaGuardado } from './lib/useTheme';
 
 aplicarTemaGuardado();
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+if (!redirigiendoAlDominio) {
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
