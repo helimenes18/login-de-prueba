@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { tomarErrorDeAutenticacion } from '../lib/authError';
 import { DEMO_EMAIL, DEMO_PASSWORD, MOSTRAR_DEMO } from '../lib/demo';
 import styles from './Login.module.css';
 
@@ -28,6 +29,13 @@ function mensajeErrorLogin(error) {
   return `❌ No se pudo iniciar sesión: ${texto || 'error desconocido'}.`;
 }
 
+function mensajeErrorGoogle(descripcion) {
+  if (/access.denied|cancel/i.test(descripcion)) {
+    return '❌ Se canceló el acceso con Google o la cuenta no está autorizada.';
+  }
+  return `❌ No se pudo iniciar sesión con Google: ${descripcion}`;
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('login');
@@ -50,6 +58,17 @@ export default function Login() {
   const [regError, setRegError] = useState('');
   const [regSuccess, setRegSuccess] = useState('');
   const [regLoading, setRegLoading] = useState(false);
+
+  // Error devuelto por Supabase al volver de Google (antes se perdía en la redirección).
+  useEffect(() => {
+    const errorOAuth = tomarErrorDeAutenticacion();
+    if (!errorOAuth) return;
+    console.error('Error OAuth devuelto por Supabase:', errorOAuth);
+    setGoogleError(mensajeErrorGoogle(errorOAuth));
+    if (window.location.search || window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   // Verifica sesión al cargar; si ya hay una, redirige al dashboard.
   useEffect(() => {

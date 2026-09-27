@@ -1,3 +1,5 @@
+// Debe cargarse antes que la app: captura el error de OAuth que llega en la URL.
+import './lib/authError';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
