@@ -1,6 +1,6 @@
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -83,6 +83,25 @@
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 10px;
 }
+
+/* Panel SCADA: pensado para ocupar todo el ancho disponible,
+   con medidores grandes y espaciados como un HMI industrial real. */
+.scada-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 28px;
+  width: 100%;
+}
+.scada-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 20px;
+  justify-items: center;
+  padding-top: 8px;
+}
 .var-item {
   background: rgba(255,255,255,0.03);
   border-radius: 10px;
@@ -107,7 +126,7 @@
 .var-item .value.danger { color: #EF4444; }
 
 .welcome-box {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(30, 27, 75, 0.3));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   border-radius: 16px;
   padding: 24px 28px;
   border: 1px solid var(--border-color);

@@ -44,15 +44,20 @@ async function fetchJsonSafe(path, options = {}, timeoutMs = 60000) {
   }
 }
 
-/** Genera lecturas simuladas de sensores (PIP, PDP, PDT, Vibración)
- * en los mismos rangos usados en toda la app, mientras no exista
- * una fuente de datos real conectada. */
+/** Genera lecturas simuladas de sensores del pozo BES, mientras no exista
+ * una fuente de datos real conectada. Incluye las 7 variables operativas
+ * que se muestran en el panel SCADA del Dashboard, más "vib" (vibración),
+ * que junto con PIP/PDP/PDT alimenta al modelo predictivo. */
 export function generarLecturas() {
   return {
-    pip: +(Math.random() * 40 + 100).toFixed(0),
-    pdp: +(Math.random() * 200 + 1300).toFixed(0),
-    pdt: +(Math.random() * 20 + 170).toFixed(0),
-    vib: +(Math.random() * 1.5 + 0.5).toFixed(2)
+    chp: +(Math.random() * 100 + 250).toFixed(0),   // Presión Cabezal Revestidor (psi)
+    thp: +(Math.random() * 80 + 180).toFixed(0),    // Presión Cabezal Tubería (psi)
+    plp: +(Math.random() * 60 + 140).toFixed(0),    // Presión Línea de Producción (psi)
+    tlp: +(Math.random() * 40 + 95).toFixed(0),     // Temperatura Línea de Producción (°F)
+    pip: +(Math.random() * 40 + 100).toFixed(0),    // Presión de Entrada de la Bomba (psi)
+    pdp: +(Math.random() * 200 + 1300).toFixed(0),  // Presión de Descarga de la Bomba (psi)
+    pdt: +(Math.random() * 20 + 170).toFixed(0),    // Temperatura de Descarga de la Bomba (°F)
+    vib: +(Math.random() * 1.5 + 0.5).toFixed(2)    // Vibración (G) — solo para el modelo IA
   };
 }
 

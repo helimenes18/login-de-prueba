@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useSession } from '../lib/useSession';
+import { useTheme } from '../lib/useTheme';
 import styles from './Layout.module.css';
 
 const NAV_ITEMS = [
@@ -31,6 +32,7 @@ const TITULOS = {
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { email, checked, logout, loggingOut } = useSession();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [titulo, breadcrumb] = TITULOS[location.pathname] || ['PredictiveBES', ''];
 
@@ -91,6 +93,14 @@ export default function Layout() {
             <span className={styles.breadcrumb}>{breadcrumb}</span>
           </div>
           <div className={styles.navbarRight}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === 'petrol' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro petróleo'}
+              className={styles.themeToggle}
+            >
+              {theme === 'petrol' ? '☀️' : '🌙'}
+            </button>
             <div className={styles.user}>
               <div className={styles.avatar}>{email.charAt(0).toUpperCase()}</div>
               <span>{email}</span>

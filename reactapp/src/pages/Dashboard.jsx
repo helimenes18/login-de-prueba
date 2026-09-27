@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { generarLecturas, predecirFalla } from '../lib/api';
+import EspDiagram from '../components/EspDiagram';
 import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
-  const [v1, setV1] = useState('--');
-  const [v2, setV2] = useState('--');
+  const [lecturas, setLecturas] = useState(generarLecturas());
 
   const [iaLoading, setIaLoading] = useState(false);
   const [iaProb, setIaProb] = useState('—');
@@ -15,17 +15,11 @@ export default function Dashboard() {
   const [alertasActivas, setAlertasActivas] = useState(0);
   const [fallasDetectadas, setFallasDetectadas] = useState(0);
 
-  const actualizarVariables = () => {
-    setV1((Math.random() * 2 + 2.5).toFixed(2) + ' A');
-    setV2((Math.random() * 10 + 115).toFixed(1) + ' V');
-  };
-
-  const actualizarRiesgoIA = async () => {
+  const actualizarRiesgoIA = async (lecturasActuales) => {
     setIaError('');
     setIaLoading(true);
-    const lecturas = generarLecturas();
     try {
-      const data = await predecirFalla(lecturas);
+      const data = await predecirFalla(lecturasActuales);
       const prob = Math.max(0, Math.min(1, Number(data.prediction)));
       const pct = prob * 100;
       setIaProb(pct.toFixed(1) + '%');
@@ -61,10 +55,13 @@ export default function Dashboard() {
   useEffect(() => {
     if (didInit.current) return;
     didInit.current = true;
-    actualizarVariables();
-    actualizarRiesgoIA();
-    const interval = setInterval(actualizarVariables, 3000);
+    const primeraLectura = generarLecturas();
+    setLecturas(primeraLectura);
+    actualizarRiesgoIA(primeraLectura);
+
+    const interval = setInterval(() => setLecturas(generarLecturas()), 3000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -73,7 +70,7 @@ export default function Dashboard() {
         <div className={styles['stat-card']}>
           <span className={styles.icon}><i className="fas fa-database"></i></span>
           <div className={styles.label}>Variables monitoreadas</div>
-          <div className={styles.value}>2</div>
+          <div className={styles.value}>7</div>
           <span className={`${styles.change} ${styles.up}`}>↑ Activas</span>
         </div>
         <div className={styles['stat-card']}>
@@ -96,25 +93,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className={styles['vars-section']}>
-        <div className={styles.header}>
-          <h3>📡 Variables operativas en tiempo real</h3>
-          <div className={styles.live}>
-            <span className={styles.dot}></span>
-            <span>EN VIVO</span>
-          </div>
-        </div>
-        <div className={styles['vars-grid']}>
-          <div className={styles['var-item']}>
-            <span className={styles.name}>Variable 1</span>
-            <span className={`${styles.value} ${styles.normal}`}>{v1}</span>
-          </div>
-          <div className={styles['var-item']}>
-            <span className={styles.name}>Variable 2</span>
-            <span className={`${styles.value} ${styles.normal}`}>{v2}</span>
-          </div>
-        </div>
-      </div>
+      <EspDiagram lecturas={lecturas} />
 
       <div className={styles['welcome-box']}>
         <div>
@@ -138,7 +117,7 @@ export default function Dashboard() {
             )}
           </h3>
           <button
-            onClick={actualizarRiesgoIA}
+            onClick={() => actualizarRiesgoIA(lecturas)}
             disabled={iaLoading}
             style={{
               background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-secondary)',
