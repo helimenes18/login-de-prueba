@@ -1,68 +1,100 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { useAppData } from '../lib/AppData';
+import { DEFAULT_SETTINGS } from '../lib/variables';
 import styles from './Configuracion.module.css';
 
-const DEFAULTS = {
-  pip_min: 100,
-  pdp_max: 1500,
-  pdt_max: 200,
-  corriente_min: 2.0,
-  email_alerts: true,
-  dashboard_alerts: true,
-  auto_reports: false,
-  monitor_interval_seconds: 3
-};
+const CAMPOS_UMBRAL = [
+  { campo: 'pip_min', label: 'Presión de succión mínima (PIP)', unidad: 'psi', step: 10, min: 0, max: 10000 },
+  { campo: 'pdp_max', label: 'Presión de descarga máxima (PDP)', unidad: 'psi', step: 10, min: 0, max: 15000 },
+  { campo: 'pdt_max', label: 'Temperatura máxima del bobinado', unidad: '°F', step: 1, min: 50, max: 600 },
+  { campo: 'corriente_min', label: 'Corriente mínima del variador', unidad: 'A', step: 5, min: 0, max: 2000 }
+];
+
+const CAMPOS_GUARDADOS = [
+  'pip_min', 'pdp_max', 'pdt_max', 'corriente_min',
+  'email_alerts', 'dashboard_alerts', 'auto_reports', 'monitor_interval_seconds'
+];
+
+/** F-14: validación de rangos y coherencia antes de guardar. */
+function validar(form) {
+  for (const c of CAMPOS_UMBRAL) {
+    const v = Number(form[c.campo]);
+    if (form[c.campo] === '' || !Number.isFinite(v)) return `${c.label}: ingrese un número.`;
+    if (v < c.min || v > c.max) return `${c.label}: debe estar entre ${c.min} y ${c.max} ${c.unidad}.`;
+  }
+  if (Number(form.pip_min) >= Number(form.pdp_max)) {
+    return 'La presión de succión mínima debe ser menor que la presión de descarga máxima.';
+  }
+  return null;
+}
 
 export default function Configuracion() {
-  const [cfg, setCfg] = useState(DEFAULTS);
+  const { cfg, setCfg, cfgCargada } = useAppData();
+  const [form, setForm] = useState(cfg);
   const [usuarioId, setUsuarioId] = useState(null);
 
   const [guardandoUmbrales, setGuardandoUmbrales] = useState(false);
-  const [umbralesMsg, setUmbralesMsg] = useState(null); // { color, texto }
+  const [umbralesMsg, setUmbralesMsg] = useState(null);
   const [guardandoConfig, setGuardandoConfig] = useState(false);
   const [configMsg, setConfigMsg] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      setUsuarioId(session.user.id);
+  useEffect(() => { setForm(cfg); }, [cfg, cfgCargada]);
 
-      try {
-        const { data, error } = await supabase
-          .from('user_settings')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        if (error) throw error;
-        if (data) setCfg((prev) => ({ ...prev, ...data }));
-      } catch (err) {
-        console.warn('No se pudo cargar user_settings (¿existe la tabla en Supabase?):', err.message);
-      }
-    })();
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setUsuarioId(session?.user?.id ?? null));
   }, []);
 
   function actualizar(campo, valor) {
-    setCfg((prev) => ({ ...prev, [campo]: valor }));
+    setForm((prev) => ({ ...prev, [campo]: valor }));
   }
 
   async function guardar(setLoading, setMsg) {
+    const errorValidacion = validar(form);
+    if (errorValidacion) {
+      setMsg({ color: '#EF4444', texto: `⚠️ ${errorValidacion}` });
+      return;
+    }
+    if (!usuarioId) {
+      setMsg({ color: '#EF4444', texto: '❌ No hay una sesión activa.' });
+      return;
+    }
     setLoading(true);
     setMsg({ color: 'var(--text-secondary)', texto: '' });
     try {
-      const payload = { user_id: usuarioId, ...cfg, updated_at: new Date().toISOString() };
+      const limpio = Object.fromEntries(CAMPOS_GUARDADOS.map((k) => [k, form[k]]));
+      CAMPOS_UMBRAL.forEach((c) => { limpio[c.campo] = Number(form[c.campo]); });
+      limpio.monitor_interval_seconds = Number(form.monitor_interval_seconds);
       const { error } = await supabase
         .from('user_settings')
-        .upsert(payload, { onConflict: 'user_id' });
+        .upsert({ user_id: usuarioId, ...limpio, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
       if (error) throw error;
-      setMsg({ color: '#22C55E', texto: '✅ Configuración guardada. Los umbrales se aplicarán en Monitoreo y Dashboard.' });
+      setCfg((prev) => ({ ...prev, ...limpio }));
+      setMsg({ color: '#22C55E', texto: '✅ Configuración guardada y aplicada en Dashboard, Monitoreo y Predictivo.' });
     } catch (err) {
       console.error('Error guardando configuración:', err);
-      setMsg({ color: '#EF4444', texto: `❌ No se pudo guardar (¿existe la tabla "user_settings" en Supabase?): ${err.message}` });
+      setMsg({ color: '#EF4444', texto: `❌ No se pudo guardar: ${err.message}` });
     } finally {
       setLoading(false);
     }
   }
+
+  function restablecer() {
+    setForm((prev) => ({
+      ...prev,
+      pip_min: DEFAULT_SETTINGS.pip_min,
+      pdp_max: DEFAULT_SETTINGS.pdp_max,
+      pdt_max: DEFAULT_SETTINGS.pdt_max,
+      corriente_min: DEFAULT_SETTINGS.corriente_min
+    }));
+    setUmbralesMsg({ color: 'var(--text-secondary)', texto: 'Valores recomendados cargados (percentiles 5 % / 95 % de esp.csv). Guarde para aplicarlos.' });
+  }
+
+  const toggles = [
+    { campo: 'email_alerts', titulo: 'Alertas por email', desc: 'Preferencia guardada (el envío de correos aún no está implementado)' },
+    { campo: 'dashboard_alerts', titulo: 'Alertas en dashboard', desc: 'Mostrar notificaciones en tiempo real' },
+    { campo: 'auto_reports', titulo: 'Reportes automáticos', desc: 'Preferencia guardada (la generación programada aún no está implementada)' }
+  ];
 
   return (
     <>
@@ -74,64 +106,50 @@ export default function Configuracion() {
       <div className={styles['config-grid']}>
         <div className={styles.card}>
           <h3>📊 Umbrales de variables</h3>
-          <div className={styles['form-group']}>
-            <label>Presión mínima (PIP)</label>
-            <input type="number" step={5} value={cfg.pip_min} onChange={(e) => actualizar('pip_min', parseFloat(e.target.value) || 0)} /> psi
-          </div>
-          <div className={styles['form-group']}>
-            <label>Presión máxima (PDP)</label>
-            <input type="number" step={10} value={cfg.pdp_max} onChange={(e) => actualizar('pdp_max', parseFloat(e.target.value) || 0)} /> psi
-          </div>
-          <div className={styles['form-group']}>
-            <label>Temperatura máxima (PDT)</label>
-            <input type="number" step={5} value={cfg.pdt_max} onChange={(e) => actualizar('pdt_max', parseFloat(e.target.value) || 0)} /> °F
-          </div>
-          <div className={styles['form-group']}>
-            <label>Corriente mínima</label>
-            <input type="number" step={0.1} value={cfg.corriente_min} onChange={(e) => actualizar('corriente_min', parseFloat(e.target.value) || 0)} /> A
-          </div>
-          <button
-            className={styles['btn-primary']}
-            disabled={guardandoUmbrales}
-            onClick={() => guardar(setGuardandoUmbrales, setUmbralesMsg)}
-          >
+          {CAMPOS_UMBRAL.map((c) => (
+            <div className={styles['form-group']} key={c.campo}>
+              <label>{c.label}</label>
+              <input
+                type="number"
+                step={c.step}
+                min={c.min}
+                max={c.max}
+                value={form[c.campo]}
+                onChange={(e) => actualizar(c.campo, e.target.value === '' ? '' : Number(e.target.value))}
+              /> {c.unidad}
+            </div>
+          ))}
+          <button className={styles['btn-primary']} disabled={guardandoUmbrales} onClick={() => guardar(setGuardandoUmbrales, setUmbralesMsg)}>
             {guardandoUmbrales ? '⏳ Guardando...' : '💾 Guardar umbrales'}
           </button>
-          {umbralesMsg && (
-            <div style={{ marginTop: 8, fontSize: '0.75rem', color: umbralesMsg.color }}>{umbralesMsg.texto}</div>
-          )}
+          <button
+            type="button"
+            onClick={restablecer}
+            style={{ marginTop: 8, width: '100%', background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: 8, borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.8rem' }}
+          >
+            ↺ Restablecer valores recomendados
+          </button>
+          {umbralesMsg && <div style={{ marginTop: 8, fontSize: '0.75rem', color: umbralesMsg.color }}>{umbralesMsg.texto}</div>}
         </div>
 
         <div>
           <div className={styles.card} style={{ marginBottom: 16 }}>
             <h3>🔔 Notificaciones</h3>
-            <div className={styles['toggle-row']}>
-              <div className={styles.info}>Alertas por email <div className={styles.desc}>Recibir notificaciones vía correo</div></div>
-              <div
-                className={`${styles['toggle-switch']} ${cfg.email_alerts ? styles.active : ''}`}
-                onClick={() => actualizar('email_alerts', !cfg.email_alerts)}
-              >
-                <div className={styles.thumb}></div>
+            {toggles.map((t) => (
+              <div className={styles['toggle-row']} key={t.campo}>
+                <div className={styles.info}>{t.titulo} <div className={styles.desc}>{t.desc}</div></div>
+                <div
+                  role="switch"
+                  aria-checked={!!form[t.campo]}
+                  tabIndex={0}
+                  className={`${styles['toggle-switch']} ${form[t.campo] ? styles.active : ''}`}
+                  onClick={() => actualizar(t.campo, !form[t.campo])}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') actualizar(t.campo, !form[t.campo]); }}
+                >
+                  <div className={styles.thumb}></div>
+                </div>
               </div>
-            </div>
-            <div className={styles['toggle-row']}>
-              <div className={styles.info}>Alertas en dashboard <div className={styles.desc}>Mostrar notificaciones en tiempo real</div></div>
-              <div
-                className={`${styles['toggle-switch']} ${cfg.dashboard_alerts ? styles.active : ''}`}
-                onClick={() => actualizar('dashboard_alerts', !cfg.dashboard_alerts)}
-              >
-                <div className={styles.thumb}></div>
-              </div>
-            </div>
-            <div className={styles['toggle-row']}>
-              <div className={styles.info}>Reportes automáticos <div className={styles.desc}>Enviar reportes semanales</div></div>
-              <div
-                className={`${styles['toggle-switch']} ${cfg.auto_reports ? styles.active : ''}`}
-                onClick={() => actualizar('auto_reports', !cfg.auto_reports)}
-              >
-                <div className={styles.thumb}></div>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className={styles.card}>
@@ -139,7 +157,7 @@ export default function Configuracion() {
             <div className={styles['form-group']}>
               <label>Intervalo de actualización</label>
               <select
-                value={String(cfg.monitor_interval_seconds)}
+                value={String(form.monitor_interval_seconds)}
                 onChange={(e) => actualizar('monitor_interval_seconds', parseInt(e.target.value, 10))}
               >
                 <option value="1">1 segundo</option>
@@ -149,16 +167,10 @@ export default function Configuracion() {
                 <option value="30">30 segundos</option>
               </select>
             </div>
-            <button
-              className={styles['btn-primary']}
-              disabled={guardandoConfig}
-              onClick={() => guardar(setGuardandoConfig, setConfigMsg)}
-            >
+            <button className={styles['btn-primary']} disabled={guardandoConfig} onClick={() => guardar(setGuardandoConfig, setConfigMsg)}>
               {guardandoConfig ? '⏳ Guardando...' : '💾 Guardar configuración'}
             </button>
-            {configMsg && (
-              <div style={{ marginTop: 8, fontSize: '0.75rem', color: configMsg.color }}>{configMsg.texto}</div>
-            )}
+            {configMsg && <div style={{ marginTop: 8, fontSize: '0.75rem', color: configMsg.color }}>{configMsg.texto}</div>}
           </div>
         </div>
       </div>

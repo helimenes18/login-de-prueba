@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { esCuentaDemo } from '../lib/demo';
 import styles from './Perfil.module.css';
+
+const ROLES = { admin: 'Administrador', operador: 'Operador BES', ingeniero: 'Ingeniero de producción' };
 
 function formatFechaLarga(iso) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+    return new Date(iso).toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' });
   } catch {
     return iso;
   }
@@ -18,44 +21,48 @@ export default function Perfil() {
   const [ultimoLogin, setUltimoLogin] = useState('—');
   const [proveedor, setProveedor] = useState('—');
   const [userId, setUserId] = useState('—');
-  const [rol, setRol] = useState('—');
+  const [rol, setRol] = useState('operador');
   const [statReportes, setStatReportes] = useState('—');
 
   const [inputName, setInputName] = useState('');
+  const [passwordActual, setPasswordActual] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [inputPasswordConfirm, setInputPasswordConfirm] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const [msg, setMsg] = useState(null); // { color, texto }
+  const [msg, setMsg] = useState(null);
+
+  const esDemo = esCuentaDemo(email);
+  const usaPassword = proveedor === 'email';
 
   useEffect(() => {
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
-
-        const userEmail = session.user.email;
-        const metaNombre = session.user.user_metadata?.full_name;
-        const nombre = metaNombre || userEmail.split('@')[0];
+        const u = session.user;
+        const nombre = u.user_metadata?.full_name || u.email.split('@')[0];
         const nombreFinal = nombre.charAt(0).toUpperCase() + nombre.slice(1);
 
-        setEmail(userEmail);
+        setEmail(u.email);
         setNombreMostrado(nombreFinal);
         setInputName(nombreFinal);
-        setCreada(formatFechaLarga(session.user.created_at));
-        setUltimoLogin(formatFechaLarga(session.user.last_sign_in_at));
-        setProveedor(session.user.app_metadata?.provider || 'email');
-        setUserId(session.user.id);
-        setRol(session.user.user_metadata?.role || 'operador');
+        setCreada(formatFechaLarga(u.created_at));
+        setUltimoLogin(formatFechaLarga(u.last_sign_in_at));
+        setProveedor(u.app_metadata?.provider || 'email');
+        setUserId(u.id);
+        // F-13: el rol se toma de app_metadata (solo modificable por el administrador del proyecto),
+        // no de user_metadata, que el propio usuario puede editar.
+        setRol(u.app_metadata?.role || 'operador');
 
         try {
           const { count, error } = await supabase
             .from('reportes_generados')
             .select('id', { count: 'exact', head: true })
-            .eq('user_id', session.user.id);
+            .eq('user_id', u.id);
           if (error) throw error;
           setStatReportes(count ?? 0);
         } catch (err) {
-          console.warn('No se pudo leer reportes_generados (¿existe la tabla en Supabase?):', err.message);
+          console.warn('No se pudo leer reportes_generados:', err.message);
           setStatReportes('—');
         }
       } catch (err) {
@@ -65,16 +72,28 @@ export default function Perfil() {
   }, []);
 
   async function actualizarPerfil() {
+    setMsg(null);
+    if (esDemo) {
+      setMsg({ color: '#F59E0B', texto: '🔒 La cuenta de demostración no puede modificarse.' });
+      return;
+    }
     const nuevoNombre = inputName.trim();
-    setMsg({ color: 'var(--text-secondary)', texto: '' });
-
     if (!nuevoNombre) {
       setMsg({ color: '#EF4444', texto: '⚠️ El nombre no puede estar vacío.' });
       return;
     }
-    if (inputPassword || inputPasswordConfirm) {
-      if (inputPassword.length < 6) {
-        setMsg({ color: '#EF4444', texto: '⚠️ La nueva contraseña debe tener al menos 6 caracteres.' });
+    const cambiaPassword = Boolean(inputPassword || inputPasswordConfirm);
+    if (cambiaPassword) {
+      if (!usaPassword) {
+        setMsg({ color: '#EF4444', texto: '⚠️ Tu cuenta usa inicio de sesión con Google; la contraseña se gestiona en Google.' });
+        return;
+      }
+      if (!passwordActual) {
+        setMsg({ color: '#EF4444', texto: '⚠️ Ingresa tu contraseña actual para cambiarla.' });
+        return;
+      }
+      if (inputPassword.length < 8) {
+        setMsg({ color: '#EF4444', texto: '⚠️ La nueva contraseña debe tener al menos 8 caracteres.' });
         return;
       }
       if (inputPassword !== inputPasswordConfirm) {
@@ -85,13 +104,18 @@ export default function Perfil() {
 
     setGuardando(true);
     try {
+      if (cambiaPassword) {
+        // F-05: verificar la contraseña actual antes de cambiarla.
+        const { error: errReauth } = await supabase.auth.signInWithPassword({ email, password: passwordActual });
+        if (errReauth) throw new Error('La contraseña actual no es correcta.');
+      }
       const payload = { data: { full_name: nuevoNombre } };
-      if (inputPassword) payload.password = inputPassword;
-
+      if (cambiaPassword) payload.password = inputPassword;
       const { error } = await supabase.auth.updateUser(payload);
       if (error) throw error;
 
-      setMsg({ color: '#22C55E', texto: '✅ Perfil actualizado correctamente.' });
+      setMsg({ color: '#22C55E', texto: cambiaPassword ? '✅ Perfil y contraseña actualizados.' : '✅ Perfil actualizado correctamente.' });
+      setPasswordActual('');
       setInputPassword('');
       setInputPasswordConfirm('');
       setNombreMostrado(nuevoNombre);
@@ -107,7 +131,7 @@ export default function Perfil() {
     <>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>👤 Mi perfil</h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Información de usuario y actividad reciente</p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Información de usuario y de la cuenta</p>
       </div>
 
       <div className={styles['profile-grid']}>
@@ -115,9 +139,15 @@ export default function Perfil() {
           <div className={styles['avatar-big']}>{nombreMostrado.charAt(0).toUpperCase()}</div>
           <div className={styles['profile-name']}>{nombreMostrado}</div>
           <div className={styles['profile-email']}>{email}</div>
-          <div className={styles['profile-role']}>Operador BES</div>
+          <div className={styles['profile-role']}>{ROLES[rol] || rol}</div>
 
-          <div style={{ marginTop: 20 }}>
+          {esDemo && (
+            <div style={{ marginTop: 16, padding: 10, borderRadius: 10, fontSize: '0.75rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}>
+              🔒 Estás usando la cuenta de demostración: el perfil y la contraseña no se pueden modificar.
+            </div>
+          )}
+
+          <fieldset disabled={esDemo} style={{ border: 'none', marginTop: 20 }}>
             <div className={styles['form-group']}>
               <label>Nombre completo</label>
               <input type="text" value={inputName} onChange={(e) => setInputName(e.target.value)} />
@@ -126,29 +156,45 @@ export default function Perfil() {
               <label>Correo electrónico</label>
               <input type="email" value={email} disabled />
             </div>
-            <div className={styles['form-group']}>
-              <label>Nueva contraseña</label>
-              <input
-                type="password"
-                placeholder="Dejar en blanco para no cambiarla"
-                value={inputPassword}
-                onChange={(e) => setInputPassword(e.target.value)}
-              />
-            </div>
-            <div className={styles['form-group']}>
-              <label>Confirmar nueva contraseña</label>
-              <input
-                type="password"
-                placeholder="Repetir contraseña"
-                value={inputPasswordConfirm}
-                onChange={(e) => setInputPasswordConfirm(e.target.value)}
-              />
-            </div>
-            <button className={styles['btn-primary']} disabled={guardando} onClick={actualizarPerfil}>
+            {usaPassword && (
+              <>
+                <div className={styles['form-group']}>
+                  <label>Contraseña actual</label>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="Requerida solo para cambiar la contraseña"
+                    value={passwordActual}
+                    onChange={(e) => setPasswordActual(e.target.value)}
+                  />
+                </div>
+                <div className={styles['form-group']}>
+                  <label>Nueva contraseña</label>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Dejar en blanco para no cambiarla"
+                    value={inputPassword}
+                    onChange={(e) => setInputPassword(e.target.value)}
+                  />
+                </div>
+                <div className={styles['form-group']}>
+                  <label>Confirmar nueva contraseña</label>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Repetir contraseña"
+                    value={inputPasswordConfirm}
+                    onChange={(e) => setInputPasswordConfirm(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+            <button className={styles['btn-primary']} disabled={guardando || esDemo} onClick={actualizarPerfil}>
               {guardando ? '⏳ Guardando...' : '💾 Actualizar perfil'}
             </button>
-            {msg && <div style={{ marginTop: 10, fontSize: '0.8rem', color: msg.color }}>{msg.texto}</div>}
-          </div>
+          </fieldset>
+          {msg && <div style={{ marginTop: 10, fontSize: '0.8rem', color: msg.color }}>{msg.texto}</div>}
         </div>
 
         <div>
@@ -163,7 +209,7 @@ export default function Perfil() {
             <h3>📊 Estadísticas de usuario</h3>
             <div className={styles['stats-mini']}>
               <div className={styles.item}><div className={styles.num}>{statReportes}</div><div className={styles.lab}>Reportes generados</div></div>
-              <div className={styles.item}><div className={styles.num}>{rol}</div><div className={styles.lab}>Rol</div></div>
+              <div className={styles.item}><div className={styles.num} style={{ fontSize: '1rem' }}>{ROLES[rol] || rol}</div><div className={styles.lab}>Rol</div></div>
             </div>
             <p style={{ marginTop: 10, fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
               Estadísticas basadas en datos reales de tu cuenta y de tus reportes generados.

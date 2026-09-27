@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { DEMO_EMAIL, DEMO_PASSWORD, MOSTRAR_DEMO } from '../lib/demo';
 import styles from './Login.module.css';
 
 const GoogleIcon = () => (
@@ -11,6 +12,21 @@ const GoogleIcon = () => (
     <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
   </svg>
 );
+
+/** F-12: distinguir cuenta sin confirmar, credenciales incorrectas y fallas de conexión con Supabase. */
+function mensajeErrorLogin(error) {
+  const texto = error?.message || '';
+  if (/not confirmed/i.test(texto)) {
+    return '📧 Debes confirmar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada (y la carpeta de spam).';
+  }
+  if (error?.code === 'invalid_credentials' || /invalid login credentials/i.test(texto)) {
+    return '❌ Correo o contraseña incorrectos. Intente de nuevo.';
+  }
+  if (error?.name === 'AuthRetryableFetchError' || error?.status === 0 || /fetch|network/i.test(texto)) {
+    return '⚠️ No se pudo conectar con el servicio de autenticación. Revisa tu conexión o intenta más tarde.';
+  }
+  return `❌ No se pudo iniciar sesión: ${texto || 'error desconocido'}.`;
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -83,11 +99,16 @@ export default function Login() {
     }
 
     setLoginLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password: loginPassword });
+    let error;
+    try {
+      ({ error } = await supabase.auth.signInWithPassword({ email, password: loginPassword }));
+    } catch (err) {
+      error = err;
+    }
 
     if (error) {
-      setLoginError('❌ Correo o contraseña incorrectos. Intente de nuevo.');
-      console.error('Error tradicional:', error.message);
+      setLoginError(mensajeErrorLogin(error));
+      console.error('Error tradicional:', error.name, error.status, error.message);
       setLoginLoading(false);
     } else {
       setLoginSuccess('✅ ¡Bienvenido! Redirigiendo...');
@@ -131,8 +152,8 @@ export default function Login() {
       setRegError('⚠️ Ingrese un correo válido.');
       return;
     }
-    if (regPassword.length < 6) {
-      setRegError('⚠️ La contraseña debe tener al menos 6 caracteres.');
+    if (regPassword.length < 8) {
+      setRegError('⚠️ La contraseña debe tener al menos 8 caracteres.');
       return;
     }
     if (regPassword !== regConfirm) {
@@ -142,10 +163,11 @@ export default function Login() {
 
     setRegLoading(true);
     try {
+      // F-13: el rol no se envía desde el cliente; se asigna en app_metadata desde Supabase.
       const { data, error } = await supabase.auth.signUp({
         email,
         password: regPassword,
-        options: { data: { role: 'operador' } }
+        options: { emailRedirectTo: window.location.origin + '/login' }
       });
 
       if (error) {
@@ -157,15 +179,15 @@ export default function Login() {
         return;
       }
 
-      if (data?.user) {
-        setRegSuccess('✅ ¡Cuenta creada! Ahora inicia sesión.');
+      if (data?.session) {
+        // Confirmación de correo desactivada en Supabase: la sesión ya está activa.
+        setRegSuccess('✅ ¡Cuenta creada! Redirigiendo...');
+      } else if (data?.user) {
+        // F-12: con confirmación de correo activa no hay sesión hasta confirmar.
+        setRegSuccess(`📧 Cuenta creada. Te enviamos un correo a ${email}: confirma tu dirección y luego inicia sesión.`);
         setRegPassword('');
         setRegConfirm('');
-        setTimeout(() => {
-          cambiarTab('login');
-          setLoginEmail(email);
-          setLoginPassword('');
-        }, 1500);
+        setLoginEmail(email);
       }
     } catch (err) {
       setRegError('❌ Error: ' + err.message);
@@ -176,8 +198,8 @@ export default function Login() {
 
   function usarDemo() {
     cambiarTab('login');
-    setLoginEmail('demo@predictivebes.com');
-    setLoginPassword('bes2025');
+    setLoginEmail(DEMO_EMAIL);
+    setLoginPassword(DEMO_PASSWORD);
   }
 
   return (
@@ -190,11 +212,9 @@ export default function Login() {
           </div>
           <p>Plataforma de inteligencia predictiva para sistemas de Bombeo Electro Sumergible (BES) con IA.</p>
           <div className={styles['badge-list']}>
-            <span className={styles.badge}>35 variables</span>
-            <span className={styles.badge}>LSTM</span>
+            <span className={styles.badge}>34 variables</span>
             <span className={styles.badge}>Random Forest</span>
-            <span className={styles.badge}>XGBoost</span>
-            <span className={styles.badge}>96.4% precisión</span>
+            <span className={styles.badge}>Validación temporal</span>
           </div>
         </div>
         <div className={styles['footer-info']}>
@@ -231,7 +251,7 @@ export default function Login() {
                 <input
                   type="email"
                   required
-                  placeholder="demo@predictivebes.com"
+                  placeholder="usuario@empresa.com"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                 />
@@ -281,11 +301,11 @@ export default function Login() {
                 />
               </div>
               <div className={styles['input-group']}>
-                <label>🔒 Contraseña (mínimo 6 caracteres)</label>
+                <label>🔒 Contraseña (mínimo 8 caracteres)</label>
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   placeholder="••••••••"
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
@@ -310,13 +330,15 @@ export default function Login() {
           </div>
         )}
 
-        <div className={styles['demo-creds']} title="Haz clic para autocompletar credenciales" onClick={usarDemo}>
-          🧪 <strong>Cuenta de demostración (clic para usar)</strong>
-          <div className={styles.creds}>
-            <span>📧 demo@predictivebes.com</span>
-            <span>🔐 bes2025</span>
+        {MOSTRAR_DEMO && (
+          <div className={styles['demo-creds']} title="Haz clic para autocompletar credenciales" onClick={usarDemo}>
+            🧪 <strong>Cuenta de demostración (clic para usar)</strong>
+            <div className={styles.creds}>
+              <span>📧 {DEMO_EMAIL}</span>
+              <span>🔐 Contraseña de demostración</span>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className={styles['back-link']}>
           <Link to="/"><i className="fas fa-arrow-left"></i> Volver a la landing page</Link>

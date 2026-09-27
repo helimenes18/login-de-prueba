@@ -3,14 +3,22 @@ import { useEffect, useState } from 'react';
 const STORAGE_KEY = 'bes_theme';
 const DEFAULT_THEME = 'petrol'; // oscuro azul/verde petróleo — el pedido como punto de partida
 
+function temaGuardado() {
+  try {
+    const guardado = localStorage.getItem(STORAGE_KEY);
+    return guardado === 'light' || guardado === 'petrol' ? guardado : DEFAULT_THEME;
+  } catch {
+    return DEFAULT_THEME;
+  }
+}
+
+/** Aplica el tema guardado al arrancar, para que Landing y Login también lo respeten. */
+export function aplicarTemaGuardado() {
+  document.documentElement.setAttribute('data-theme', temaGuardado());
+}
+
 export function useTheme() {
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
-    } catch {
-      return DEFAULT_THEME;
-    }
-  });
+  const [theme, setTheme] = useState(temaGuardado);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

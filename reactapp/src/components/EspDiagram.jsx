@@ -1,28 +1,47 @@
+import { VARIABLES_POR_KEY, estadoVariable } from '../lib/variables';
 import styles from './EspDiagram.module.css';
 
-function estadoColor(valor, warnAt, dangerAt, invert) {
-  if (!invert) {
-    if (dangerAt !== undefined && valor >= dangerAt) return 'var(--status-danger)';
-    if (warnAt !== undefined && valor >= warnAt) return 'var(--status-warning)';
-  } else {
-    if (dangerAt !== undefined && valor <= dangerAt) return 'var(--status-danger)';
-    if (warnAt !== undefined && valor <= warnAt) return 'var(--status-warning)';
-  }
-  return 'var(--status-ok)';
+const COLOR_ESTADO = {
+  normal: 'var(--status-ok)',
+  warning: 'var(--status-warning)',
+  danger: 'var(--status-danger)'
+};
+
+function numero(valor) {
+  if (!Number.isFinite(valor)) return '—';
+  const decimales = Math.abs(valor) < 100 ? 1 : 0;
+  return valor.toLocaleString('es-VE', { maximumFractionDigits: decimales });
 }
 
 // Posiciones en porcentaje, calculadas sobre el viewBox "60 10 860 570" del SVG.
+// Cada indicador muestra una de las 34 variables reales de esp.csv; el color sale de los
+// umbrales configurados por el usuario (Configuración) cuando la variable tiene regla.
 const READOUTS = [
-  { key: 'thp', label: 'THP', sublabel: 'Presión Cabezal de la Tubería', unit: 'psi', top: 7, left: 8.7, warnAt: 260, dangerAt: 285 },
-  { key: 'chp', label: 'CHP', sublabel: 'Presión Cabezal del Revestidor', unit: 'psi', top: 14.8, left: 4, warnAt: 380, dangerAt: 420 },
-  { key: 'plp', label: 'PLP', sublabel: 'Presión Línea de Producción', unit: 'psi', top: 14, left: 41.9, warnAt: 210, dangerAt: 235 },
-  { key: 'tlp', label: 'TLP', sublabel: 'Temp. Línea de Producción', unit: '°F', top: 14, left: 64, warnAt: 140, dangerAt: 152 },
-  { key: 'pdp', label: 'PDP', sublabel: 'Presión de Descarga de Bomba', unit: 'psi', top: 53.6, left: 20.4, warnAt: 1450, dangerAt: 1550 },
-  { key: 'pdt', label: 'PDT', sublabel: 'Temp. Descarga de Bomba', unit: '°F', top: 58.6, left: 4, warnAt: 195, dangerAt: 205 },
-  { key: 'pip', label: 'PIP', sublabel: 'Presión de Entrada de Bomba', unit: 'psi', top: 66, left: 20.4, warnAt: 100, dangerAt: 80, invert: true }
+  { key: 'Drive_Voltage', label: 'VOLT', top: 7, left: 8.7 },
+  { key: 'Drive_Current', label: 'AMP', top: 14.8, left: 4 },
+  { key: 'Output_Frequency', label: 'FREQ', top: 14, left: 41.9 },
+  { key: 'Oil', label: 'PETRÓLEO', top: 14, left: 64 },
+  { key: 'Discharge_Pressure', label: 'PDP', top: 53.6, left: 20.4 },
+  { key: 'Motor_Winding_Temp', label: 'T. MOTOR', top: 58.6, left: 4 },
+  { key: 'Intake_Pressure', label: 'PIP', top: 66, left: 20.4 }
 ];
 
-export default function EspDiagram({ lecturas }) {
+/**
+ * Diagrama de proceso del pozo con la lectura actual reproducida desde esp.csv.
+ * valores: las 34 variables de la lectura · cfg: umbrales del usuario ·
+ * riesgo: resultado de nivelRiesgo() para la predicción del modelo (o null).
+ */
+export default function EspDiagram({ valores, cfg, riesgo, recordId, fuente, cargando }) {
+  const lecturas = valores || {};
+  const estadoDe = (key) => COLOR_ESTADO[estadoVariable(key, lecturas[key], cfg)];
+  const produccion = [
+    ['Petróleo', 'Oil'], ['Gas', 'Gas'], ['Agua', 'Water'], ['Frecuencia VSD', 'Output_Frequency']
+  ];
+  const estadoTexto = cargando
+    ? 'Cargando lecturas...'
+    : riesgo?.texto || 'Sin predicción del modelo';
+  const estadoColor = riesgo?.color || 'var(--text-secondary)';
+
   const now = new Date();
   const fecha = now.toLocaleDateString('es-ES');
   const hora = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -30,7 +49,7 @@ export default function EspDiagram({ lecturas }) {
   return (
     <div className={styles.wrap}>
       <div className={styles.topbar}>
-        <span className={styles.system}>🛢️ ESP-01 · Monitoreo de pozo</span>
+        <span className={styles.system}>🛢️ ESP · Lectura {recordId ?? '—'}</span>
         <span className={styles.clock}>{fecha} · {hora}</span>
       </div>
 
@@ -117,15 +136,18 @@ export default function EspDiagram({ lecturas }) {
           <g>
             <rect x="640" y="230" width="220" height="150" rx="10" className={styles.infoPanelBody} />
             <text x="750" y="256" className={styles.equipLabel}>PRODUCCIÓN ACTUAL</text>
-            <text x="670" y="290" className={styles.infoRowLabel}>Petróleo</text>
-            <text x="850" y="290" className={styles.infoRowValue} textAnchor="end">386 bpd</text>
-            <text x="670" y="316" className={styles.infoRowLabel}>Gas</text>
-            <text x="850" y="316" className={styles.infoRowValue} textAnchor="end">121 Mscf</text>
-            <text x="670" y="342" className={styles.infoRowLabel}>Agua</text>
-            <text x="850" y="342" className={styles.infoRowValue} textAnchor="end">42 bwpd</text>
+            {produccion.map(([etiqueta, key], i) => {
+              const y = i < 3 ? 290 + i * 26 : 374;
+              return (
+                <g key={key}>
+                  <text x="670" y={y} className={styles.infoRowLabel}>{etiqueta}</text>
+                  <text x="850" y={y} className={styles.infoRowValue} textAnchor="end">
+                    {numero(lecturas[key])} {VARIABLES_POR_KEY[key].unit}
+                  </text>
+                </g>
+              );
+            })}
             <line x1="660" y1="356" x2="840" y2="356" className={styles.divider} />
-            <text x="670" y="374" className={styles.infoRowLabel}>Frecuencia VSD</text>
-            <text x="850" y="374" className={styles.infoRowValue} textAnchor="end">58 Hz</text>
           </g>
 
           {/* Leyenda: qué significa cada símbolo del diagrama */}
@@ -153,17 +175,18 @@ export default function EspDiagram({ lecturas }) {
 
         {READOUTS.map((r) => {
           const valor = lecturas[r.key];
-          const color = estadoColor(valor, r.warnAt, r.dangerAt, r.invert);
+          const color = estadoDe(r.key);
           return (
             <div
               key={r.key}
               className={styles.readout}
               style={{ top: `${r.top}%`, left: `${r.left}%`, borderColor: color }}
+              title={VARIABLES_POR_KEY[r.key].label}
             >
               <div className={styles.readoutLabel}>{r.label}</div>
               <div className={styles.readoutValue} style={{ color }}>
-                {Number.isFinite(valor) ? valor : '—'}
-                <span className={styles.readoutUnit}>{r.unit}</span>
+                {numero(valor)}
+                <span className={styles.readoutUnit}>{VARIABLES_POR_KEY[r.key].unit}</span>
               </div>
             </div>
           );
@@ -176,16 +199,16 @@ export default function EspDiagram({ lecturas }) {
       <div className={styles.mobileList}>
         {READOUTS.map((r) => {
           const valor = lecturas[r.key];
-          const color = estadoColor(valor, r.warnAt, r.dangerAt, r.invert);
+          const color = estadoDe(r.key);
           return (
             <div key={r.key} className={styles.mobileRow} style={{ borderLeftColor: color }}>
               <div>
                 <div className={styles.mobileLabel}>{r.label}</div>
-                <div className={styles.mobileSublabel}>{r.sublabel}</div>
+                <div className={styles.mobileSublabel}>{VARIABLES_POR_KEY[r.key].label}</div>
               </div>
               <div className={styles.mobileValue} style={{ color }}>
-                {Number.isFinite(valor) ? valor : '—'}
-                <span className={styles.readoutUnit}>{r.unit}</span>
+                {numero(valor)}
+                <span className={styles.readoutUnit}>{VARIABLES_POR_KEY[r.key].unit}</span>
               </div>
             </div>
           );
@@ -193,11 +216,11 @@ export default function EspDiagram({ lecturas }) {
       </div>
 
       <div className={styles.footerbar}>
-        <span className={styles.footerStatus}>
-          <span className={styles.footerDot}></span>
-          Bomba operando con normalidad
+        <span className={styles.footerStatus} style={{ color: estadoColor }}>
+          <span className={styles.footerDot} style={{ background: estadoColor }}></span>
+          {estadoTexto}
         </span>
-        <span className={styles.footerHint}>Valores simulados · listo para conectar telemetría real</span>
+        <span className={styles.footerHint}>Reproducción de lecturas reales · {fuente || 'esp.csv'}</span>
       </div>
     </div>
   );
